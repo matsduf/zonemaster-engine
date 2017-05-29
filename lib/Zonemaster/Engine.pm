@@ -1,29 +1,29 @@
-package Zonemaster;
+package Zonemaster::Engine;
 
 use version; our $VERSION = version->declare("v1.1.0");
 
 use 5.014002;
 use Moose;
 
-use Zonemaster::Nameserver;
-use Zonemaster::Logger;
-use Zonemaster::Config;
-use Zonemaster::Zone;
-use Zonemaster::Test;
-use Zonemaster::Recursor;
-use Zonemaster::ASNLookup;
+use Zonemaster::Engine::Nameserver;
+use Zonemaster::Engine::Logger;
+use Zonemaster::Engine::Config;
+use Zonemaster::Engine::Zone;
+use Zonemaster::Engine::Test;
+use Zonemaster::Engine::Recursor;
+use Zonemaster::Engine::ASNLookup;
 
 our $logger;
 our $config;
-our $recursor = Zonemaster::Recursor->new;
+our $recursor = Zonemaster::Engine::Recursor->new;
 
 sub logger {
-    return $logger //= Zonemaster::Logger->new;
+    return $logger //= Zonemaster::Engine::Logger->new;
 }
 
 sub config {
     if ( not defined $config ) {
-        $config = Zonemaster::Config->new;
+        $config = Zonemaster::Engine::Config->new;
     }
 
     return $config;
@@ -32,39 +32,39 @@ sub config {
 sub ns {
     my ( $class, $name, $address ) = @_;
 
-    return Zonemaster::Nameserver->new( { name => $name, address => $address } );
+    return Zonemaster::Engine::Nameserver->new( { name => $name, address => $address } );
 }
 
 sub zone {
     my ( $class, $name ) = @_;
 
-    return Zonemaster::Zone->new( { name => $name } );
+    return Zonemaster::Engine::Zone->new( { name => $name } );
 }
 
 sub test_zone {
     my ( $class, $zname ) = @_;
 
-    return Zonemaster::Test->run_all_for( $class->zone( $zname ) );
+    return Zonemaster::Engine::Test->run_all_for( $class->zone( $zname ) );
 }
 
 sub test_module {
     my ( $class, $module, $zname ) = @_;
 
-    return Zonemaster::Test->run_module( $module, $class->zone( $zname ) );
+    return Zonemaster::Engine::Test->run_module( $module, $class->zone( $zname ) );
 }
 
 sub test_method {
     my ( $class, $module, $method, @arguments ) = @_;
 
-    return Zonemaster::Test->run_one( $module, $method, @arguments );
+    return Zonemaster::Engine::Test->run_one( $module, $method, @arguments );
 }
 
 sub all_tags {
     my ( $class ) = @_;
     my @res;
 
-    foreach my $module ( 'Basic', sort { $a cmp $b } Zonemaster::Test->modules ) {
-        my $full = "Zonemaster::Test::$module";
+    foreach my $module ( 'Basic', sort { $a cmp $b } Zonemaster::Engine::Test->modules ) {
+        my $full = "Zonemaster::Engine::Test::$module";
         my $ref  = $full->metadata;
         foreach my $list ( values %{$ref} ) {
             push @res, map { uc( $module ) . q{:} . $_ } sort { $a cmp $b } @{$list};
@@ -78,8 +78,8 @@ sub all_methods {
     my ( $class ) = @_;
     my %res;
 
-    foreach my $module ( 'Basic', Zonemaster::Test->modules ) {
-        my $full = "Zonemaster::Test::$module";
+    foreach my $module ( 'Basic', Zonemaster::Engine::Test->modules ) {
+        my $full = "Zonemaster::Engine::Test::$module";
         my $ref  = $full->metadata;
         foreach my $method ( sort { $a cmp $b } keys %{$ref} ) {
             push @{ $res{$module} }, $method;
@@ -103,8 +103,8 @@ sub add_fake_delegation {
     # Check fake delegation
     foreach my $name ( keys %{$href} ) {
         if ( not defined $href->{$name} or not scalar @{ $href->{$name} } ) {
-            if ( Zonemaster::Zone->new( { name => $domain } )->is_in_zone( $name ) ) {
-                Zonemaster->logger->add(
+            if ( Zonemaster::Engine::Zone->new( { name => $domain } )->is_in_zone( $name ) ) {
+                Zonemaster::Engine->logger->add(
                     FAKE_DELEGATION_IN_ZONE_NO_IP => { domain => $domain , ns => $name }
                 );
             }
@@ -114,7 +114,7 @@ sub add_fake_delegation {
                     push @{ $href->{$name} }, @ips;
                 }
                 else {
-                    Zonemaster->logger->add(
+                    Zonemaster::Engine->logger->add(
                         FAKE_DELEGATION_NO_IP => { domain => $domain , ns => $name  }
                     );
 		}
@@ -154,35 +154,35 @@ sub can_continue {
 sub save_cache {
     my ( $class, $filename ) = @_;
 
-    return Zonemaster::Nameserver->save( $filename );
+    return Zonemaster::Engine::Nameserver->save( $filename );
 }
 
 sub preload_cache {
     my ( $class, $filename ) = @_;
 
-    return Zonemaster::Nameserver->restore( $filename );
+    return Zonemaster::Engine::Nameserver->restore( $filename );
 }
 
 sub asn_lookup {
     my ( undef, $ip ) = @_;
 
-    return Zonemaster::ASNLookup->get( $ip );
+    return Zonemaster::Engine::ASNLookup->get( $ip );
 }
 
 sub modules {
-    return Zonemaster::Test->modules;
+    return Zonemaster::Engine::Test->modules;
 }
 
 sub start_time_now {
-    Zonemaster::Logger->start_time_now();
+    Zonemaster::Engine::Logger->start_time_now();
     return;
 }
 
 sub reset {
-    Zonemaster::Logger->start_time_now();
-    Zonemaster::Nameserver->empty_cache();
+    Zonemaster::Engine::Logger->start_time_now();
+    Zonemaster::Engine::Nameserver->empty_cache();
     $logger->clear_history() if $logger;
-    Zonemaster::Recursor->clear_cache();
+    Zonemaster::Engine::Recursor->clear_cache();
 
     return;
 }
@@ -193,11 +193,11 @@ Zonemaster - A tool to check the quality of a DNS zone
 
 =head1 SYNOPSIS
 
-    my @results = Zonemaster->test_zone('iis.se')
+    my @results = Zonemaster::Engine->test_zone('iis.se')
 
 =head1 INTRODUCTION
 
-This manual describes the main L<Zonemaster> module. If what you're after is documentation on the Zonemaster test engine as a whole, see L<Zonemaster::Overview>.
+This manual describes the main L<Zonemaster::Engine> module. If what you're after is documentation on the Zonemaster test engine as a whole, see L<Zonemaster::Engine::Overview>.
 
 =head1 METHODS
 
@@ -205,7 +205,7 @@ This manual describes the main L<Zonemaster> module. If what you're after is doc
 
 =item test_zone($name)
 
-Runs all available tests and returns a list of L<Zonemaster::Logger::Entry> objects.
+Runs all available tests and returns a list of L<Zonemaster::Engine::Logger::Entry> objects.
 
 =item test_module($module, $name)
 
@@ -219,19 +219,19 @@ are fulfilled, the method will be called with the provided arguments.
 
 =item zone($name)
 
-Returns a L<Zonemaster::Zone> object for the given name.
+Returns a L<Zonemaster::Engine::Zone> object for the given name.
 
 =item ns($name, $address)
 
-Returns a L<Zonemaster::Nameserver> object for the given name and address.
+Returns a L<Zonemaster::Engine::Nameserver> object for the given name and address.
 
 =item config()
 
-Returns the global L<Zonemaster::Config> object.
+Returns the global L<Zonemaster::Engine::Config> object.
 
 =item logger()
 
-Returns the global L<Zonemaster::Logger> object.
+Returns the global L<Zonemaster::Engine::Logger> object.
 
 =item all_tags()
 
@@ -244,7 +244,7 @@ Returns a hash, where the keys are test module names and the values are lists wi
 =item recurse($name, $type, $class)
 
 Does a recursive lookup for the given name, type and class, and returns the resulting packet (if any). Simply calls
-L<Zonemaster::Recursor/recurse> on a globally stored object.
+L<Zonemaster::Engine::Recursor/recurse> on a globally stored object.
 
 =item can_continue()
 
@@ -281,7 +281,7 @@ If called in scalar context, only the AS number.
 
 =item modules()
 
-Returns a list of the loaded test modules. Exactly the same as L<Zonemaster::Test/modules>.
+Returns a list of the loaded test modules. Exactly the same as L<Zonemaster::Engine::Test/modules>.
 
 =item add_fake_delegation($domain, $data)
 
@@ -292,7 +292,7 @@ in-bailiwick nameservers.
 
 Example:
 
-    Zonemaster->add_fake_delegation(
+    Zonemaster::Engine->add_fake_delegation(
         'lysator.liu.se' => {
             'ns1.nic.fr' => [ ],
             'ns.nic.se'  => [ '212.247.7.228',  '2a00:801:f0:53::53' ],
@@ -311,7 +311,7 @@ unbroken string of hexadecimal digits.
 
 Example:
 
-   Zonemaster->add_fake_ds(
+   Zonemaster::Engine->add_fake_ds(
       'nic.se' => [
          { keytag => 16696, algorithm => 5, type => 2, digest => '40079DDF8D09E7F10BB248A69B6630478A28EF969DDE399F95BC3B39F8CBACD7' },
          { keytag => 16696, algorithm => 5, type => 1, digest => 'EF5D421412A5EAF1230071AFFD4F585E3B2B1A60' },
