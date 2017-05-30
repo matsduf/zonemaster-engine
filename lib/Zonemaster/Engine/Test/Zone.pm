@@ -1,4 +1,4 @@
-package Zonemaster::Test::Zone;
+package Zonemaster::Engine::Test::Zone;
 
 use version; our $VERSION = version->declare("v1.0.2");
 
@@ -7,11 +7,11 @@ use warnings;
 
 use 5.014002;
 
-use Zonemaster;
-use Zonemaster::Util;
-use Zonemaster::Test::Address;
-use Zonemaster::TestMethods;
-use Zonemaster::Constants qw[:soa :ip];
+use Zonemaster::Engine;
+use Zonemaster::Engine::Util;
+use Zonemaster::Engine::Test::Address;
+use Zonemaster::Engine::TestMethods;
+use Zonemaster::Engine::Constants qw[:soa :ip];
 use List::MoreUtils qw[none];
 
 use Carp;
@@ -24,22 +24,22 @@ sub all {
     my ( $class, $zone ) = @_;
     my @results;
 
-    push @results, $class->zone01( $zone ) if Zonemaster->config->should_run( 'zone01' );
+    push @results, $class->zone01( $zone ) if Zonemaster::Engine->config->should_run( 'zone01' );
     if ( none { $_->tag eq q{NO_RESPONSE_SOA_QUERY} } @results ) {
 
-        push @results, $class->zone02( $zone ) if Zonemaster->config->should_run( 'zone02' );
-        push @results, $class->zone03( $zone ) if Zonemaster->config->should_run( 'zone03' );
-        push @results, $class->zone04( $zone ) if Zonemaster->config->should_run( 'zone04' );
-        push @results, $class->zone05( $zone ) if Zonemaster->config->should_run( 'zone05' );
-        push @results, $class->zone06( $zone ) if Zonemaster->config->should_run( 'zone06' );
+        push @results, $class->zone02( $zone ) if Zonemaster::Engine->config->should_run( 'zone02' );
+        push @results, $class->zone03( $zone ) if Zonemaster::Engine->config->should_run( 'zone03' );
+        push @results, $class->zone04( $zone ) if Zonemaster::Engine->config->should_run( 'zone04' );
+        push @results, $class->zone05( $zone ) if Zonemaster::Engine->config->should_run( 'zone05' );
+        push @results, $class->zone06( $zone ) if Zonemaster::Engine->config->should_run( 'zone06' );
         if ( none { $_->tag eq q{MNAME_RECORD_DOES_NOT_EXIST} } @results ) {
-            push @results, $class->zone07( $zone ) if Zonemaster->config->should_run( 'zone07' );
+            push @results, $class->zone07( $zone ) if Zonemaster::Engine->config->should_run( 'zone07' );
         }
     }
     if ( none { $_->tag eq q{MNAME_RECORD_DOES_NOT_EXIST} } @results ) {
-        push @results, $class->zone08( $zone ) if Zonemaster->config->should_run( 'zone08' );
+        push @results, $class->zone08( $zone ) if Zonemaster::Engine->config->should_run( 'zone08' );
         if ( none { $_->tag eq q{NO_RESPONSE_MX_QUERY} } @results ) {
-            push @results, $class->zone09( $zone ) if Zonemaster->config->should_run( 'zone09' );
+            push @results, $class->zone09( $zone ) if Zonemaster::Engine->config->should_run( 'zone09' );
         }
     }
 
@@ -172,7 +172,7 @@ sub translation {
 } ## end sub translation
 
 sub version {
-    return "$Zonemaster::Test::Zone::VERSION";
+    return "$Zonemaster::Engine::Test::Zone::VERSION";
 }
 
 sub zone01 {
@@ -188,9 +188,9 @@ sub zone01 {
             push @results, info( MNAME_RECORD_DOES_NOT_EXIST => {} );
         }
         else {
-            foreach my $ip_address ( Zonemaster::Recursor->get_addresses_for( $soa_mname ) ) {
+            foreach my $ip_address ( Zonemaster::Engine::Recursor->get_addresses_for( $soa_mname ) ) {
 
-                my $ns = Zonemaster::Nameserver->new( { name => $soa_mname, address => $ip_address->short } );
+                my $ns = Zonemaster::Engine::Nameserver->new( { name => $soa_mname, address => $ip_address->short } );
 
                 if ( _is_ip_version_disabled( $ns ) ) {
                     next;
@@ -218,13 +218,13 @@ sub zone01 {
                         }
                       );
                 }
-            } ## end foreach my $ip_address ( Zonemaster::Recursor...)
-            if ( none { $_ eq $soa_mname } @{ Zonemaster::TestMethods->method2( $zone ) } ) {
+            } ## end foreach my $ip_address ( Zonemaster::Engine::Recursor...)
+            if ( none { $_ eq $soa_mname } @{ Zonemaster::Engine::TestMethods->method2( $zone ) } ) {
                 push @results,
                   info(
                     MNAME_NOT_IN_GLUE => {
                         mname => $soa_mname,
-                        ns    => join( q{;}, @{ Zonemaster::TestMethods->method2( $zone ) } ),
+                        ns    => join( q{;}, @{ Zonemaster::Engine::TestMethods->method2( $zone ) } ),
                     }
                   );
             }
@@ -449,7 +449,7 @@ sub zone07 {
         $soa_mname =~ s/[.]\z//smx;
         my $addresses_nb = 0;
         foreach my $address_type ( q{A}, q{AAAA} ) {
-            my $p_mname = Zonemaster::Recursor->recurse( $soa_mname, $address_type );
+            my $p_mname = Zonemaster::Engine::Recursor->recurse( $soa_mname, $address_type );
             if ( $p_mname ) {
                 if ( $p_mname->has_rrs_of_type_for_name( $address_type, $soa_mname ) ) {
                     $addresses_nb++;
@@ -559,7 +559,7 @@ sub _retrieve_record_from_zone {
     my ( $zone, $name, $type ) = @_;
 
     # Return response from the first authoritative server that gives one
-    foreach my $ns ( @{ Zonemaster::TestMethods->method5( $zone ) } ) {
+    foreach my $ns ( @{ Zonemaster::Engine::TestMethods->method5( $zone ) } ) {
 
         if ( _is_ip_version_disabled( $ns ) ) {
             next;
@@ -578,13 +578,13 @@ sub _retrieve_record_from_zone {
 sub _is_ip_version_disabled {
     my $ns = shift;
 
-    if ( not Zonemaster->config->ipv4_ok and $ns->address->version == $IP_VERSION_4 ) {
-        Zonemaster->logger->add( SKIP_IPV4_DISABLED => { ns => "$ns" } );
+    if ( not Zonemaster::Engine->config->ipv4_ok and $ns->address->version == $IP_VERSION_4 ) {
+        Zonemaster::Engine->logger->add( SKIP_IPV4_DISABLED => { ns => "$ns" } );
         return 1;
     }
 
-    if ( not Zonemaster->config->ipv6_ok and $ns->address->version == $IP_VERSION_6 ) {
-        Zonemaster->logger->add( SKIP_IPV6_DISABLED => { ns => "$ns" } );
+    if ( not Zonemaster::Engine->config->ipv6_ok and $ns->address->version == $IP_VERSION_6 ) {
+        Zonemaster::Engine->logger->add( SKIP_IPV6_DISABLED => { ns => "$ns" } );
         return 1;
     }
 
@@ -595,11 +595,11 @@ sub _is_ip_version_disabled {
 
 =head1 NAME
 
-Zonemaster::Test::Zone - module implementing tests of the zone content in DNS, such as SOA and MX records
+Zonemaster::Engine::Test::Zone - module implementing tests of the zone content in DNS, such as SOA and MX records
 
 =head1 SYNOPSIS
 
-    my @results = Zonemaster::Test::Zone->all($zone);
+    my @results = Zonemaster::Engine::Test::Zone->all($zone);
 
 =head1 METHODS
 

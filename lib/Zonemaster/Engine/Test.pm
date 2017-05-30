@@ -1,4 +1,4 @@
-package Zonemaster::Test;
+package Zonemaster::Engine::Test;
 
 use version; our $VERSION = version->declare("v1.1.1");
 
@@ -6,9 +6,9 @@ use 5.014002;
 use strict;
 use warnings;
 
-use Zonemaster;
-use Zonemaster::Util;
-use Zonemaster::Test::Basic;
+use Zonemaster::Engine;
+use Zonemaster::Engine::Util;
+use Zonemaster::Engine::Test::Basic;
 
 use IO::Socket::INET6;    # Lazy-loads, so make sure it's here for the version logging
 
@@ -20,11 +20,11 @@ my @all_test_modules;
 
 @all_test_modules =
   sort { $a cmp $b }
-  map { my $f = $_; $f =~ s|^Zonemaster::Test::||; $f }
-  grep { $_ ne 'Zonemaster::Test::Basic' } useall( 'Zonemaster::Test' );
+  map { my $f = $_; $f =~ s|^Zonemaster::Engine::Test::||; $f }
+  grep { $_ ne 'Zonemaster::Engine::Test::Basic' } useall( 'Zonemaster::Engine::Test' );
 
 sub _log_versions {
-    info( GLOBAL_VERSION => { version => Zonemaster->VERSION } );
+    info( GLOBAL_VERSION => { version => Zonemaster::Engine->VERSION } );
 
     info( DEPENDENCY_VERSION => { name => 'Net::LDNS',             version => $Net::LDNS::VERSION } );
     info( DEPENDENCY_VERSION => { name => 'IO::Socket::INET6',     version => $IO::Socket::INET6::VERSION } );
@@ -40,10 +40,10 @@ sub _log_versions {
     info( DEPENDENCY_VERSION => { name => 'Hash::Merge',           version => $Hash::Merge::VERSION } );
     info( DEPENDENCY_VERSION => { name => 'Readonly',              version => $Readonly::VERSION } );
 
-    foreach my $file ( @{ Zonemaster->config->cfiles } ) {
+    foreach my $file ( @{ Zonemaster::Engine->config->cfiles } ) {
         info( CONFIG_FILE => { name => $file } );
     }
-    foreach my $file ( @{ Zonemaster->config->pfiles } ) {
+    foreach my $file ( @{ Zonemaster::Engine->config->pfiles } ) {
         info( POLICY_FILE => { name => $file } );
     }
 
@@ -58,41 +58,41 @@ sub run_all_for {
     my ( $class, $zone ) = @_;
     my @results;
 
-    Zonemaster->start_time_now();
+    Zonemaster::Engine->start_time_now();
     push @results, info( START_TIME => { time_t => time(), string => strftime( "%F %T %z", ( localtime() ) ) } );
     push @results, info( TEST_TARGET => { zone => $zone->name->string, module => 'all' } );
 
     info(
         MODULE_VERSION => {
-            module  => 'Zonemaster::Test::Basic',
-            version => Zonemaster::Test::Basic->version
+            module  => 'Zonemaster::Engine::Test::Basic',
+            version => Zonemaster::Engine::Test::Basic->version
         }
     );
     _log_versions();
 
-    if ( not( Zonemaster->config->ipv4_ok or Zonemaster->config->ipv6_ok ) ) {
+    if ( not( Zonemaster::Engine->config->ipv4_ok or Zonemaster::Engine->config->ipv6_ok ) ) {
         return info( NO_NETWORK => {} );
     }
 
-    push @results, Zonemaster::Test::Basic->all( $zone );
-    info( MODULE_END => { module => 'Zonemaster::Test::Basic' } );
+    push @results, Zonemaster::Engine::Test::Basic->all( $zone );
+    info( MODULE_END => { module => 'Zonemaster::Engine::Test::Basic' } );
 
-    if ( Zonemaster::Test::Basic->can_continue( @results ) and Zonemaster->can_continue() ) {
+    if ( Zonemaster::Engine::Test::Basic->can_continue( @results ) and Zonemaster::Engine->can_continue() ) {
         ## no critic (Modules::RequireExplicitInclusion)
         foreach my $mod ( __PACKAGE__->modules ) {
-            Zonemaster->config->load_module_policy( $mod );
+            Zonemaster::Engine->config->load_module_policy( $mod );
 
             if ( not _policy_allowed( $mod ) ) {
                 push @results, info( POLICY_DISABLED => { name => $mod } );
                 next;
             }
 
-            my $module = "Zonemaster::Test::$mod";
+            my $module = "Zonemaster::Engine::Test::$mod";
             info( MODULE_VERSION => { module => $module, version => $module->version } );
             my @res = eval { $module->all( $zone ) };
             if ( $@ ) {
                 my $err = $@;
-                if ( blessed $err and $err->isa( 'Zonemaster::Exception' ) ) {
+                if ( blessed $err and $err->isa( 'Zonemaster::Engine::Exception' ) ) {
                     die $err;    # Utility exception, pass it on
                 }
                 else {
@@ -103,7 +103,7 @@ sub run_all_for {
 
             push @results, @res;
         } ## end foreach my $mod ( __PACKAGE__...)
-    } ## end if ( Zonemaster::Test::Basic...)
+    } ## end if ( Zonemaster::Engine::Test::Basic...)
     else {
         push @results, info( CANNOT_CONTINUE => { zone => $zone->name->string } );
     }
@@ -117,23 +117,23 @@ sub run_module {
     my ( $module ) = grep { lc( $requested ) eq lc( $_ ) } $class->modules;
     $module = 'Basic' if ( not $module and lc( $requested ) eq 'basic' );
 
-    Zonemaster->start_time_now();
+    Zonemaster::Engine->start_time_now();
     push @res, info( START_TIME => { time_t => time(), string => strftime( "%F %T %z", ( localtime() ) ) } );
     push @res, info( TEST_TARGET => { zone => $zone->name->string, module => $requested } );
     _log_versions();
-    if ( not( Zonemaster->config->ipv4_ok or Zonemaster->config->ipv6_ok ) ) {
+    if ( not( Zonemaster::Engine->config->ipv4_ok or Zonemaster::Engine->config->ipv6_ok ) ) {
         return info( NO_NETWORK => {} );
     }
 
-    if ( Zonemaster->can_continue() ) {
+    if ( Zonemaster::Engine->can_continue() ) {
         if ( $module ) {
-            Zonemaster->config->load_module_policy( $module );
-            my $m = "Zonemaster::Test::$module";
+            Zonemaster::Engine->config->load_module_policy( $module );
+            my $m = "Zonemaster::Engine::Test::$module";
             info( MODULE_VERSION => { module => $m, version => $m->version } );
             push @res, eval { $m->all( $zone ) };
             if ( $@ ) {
                 my $err = $@;
-                if ( blessed $err and $err->isa( 'Zonemaster::Exception' ) ) {
+                if ( blessed $err and $err->isa( 'Zonemaster::Engine::Exception' ) ) {
                     die $err;    # Utility exception, pass it on
                 }
                 else {
@@ -160,25 +160,25 @@ sub run_one {
     my ( $module ) = grep { lc( $requested ) eq lc( $_ ) } $class->modules;
     $module = 'Basic' if ( not $module and lc( $requested ) eq 'basic' );
 
-    Zonemaster->start_time_now();
+    Zonemaster::Engine->start_time_now();
     push @res, info( START_TIME => { time_t => time(), string => strftime( "%F %T %z", ( localtime() ) ) } );
     push @res,
       info( TEST_ARGS => { module => $requested, method => $test, args => join( ';', map { "$_" } @arguments ) } );
     _log_versions();
-    if ( not( Zonemaster->config->ipv4_ok or Zonemaster->config->ipv6_ok ) ) {
+    if ( not( Zonemaster::Engine->config->ipv4_ok or Zonemaster::Engine->config->ipv6_ok ) ) {
         return info( NO_NETWORK => {} );
     }
 
-    if ( Zonemaster->can_continue() ) {
+    if ( Zonemaster::Engine->can_continue() ) {
         if ( $module ) {
-            Zonemaster->config->load_module_policy( $module );
-            my $m = "Zonemaster::Test::$module";
+            Zonemaster::Engine->config->load_module_policy( $module );
+            my $m = "Zonemaster::Engine::Test::$module";
             if ( $m->metadata->{$test} ) {
                 info( MODULE_CALL => { module => $module, method => $test, version => $m->version } );
                 push @res, eval { $m->$test( @arguments ) };
                 if ( $@ ) {
                     my $err = $@;
-                    if ( blessed $err and $err->isa( 'Zonemaster::Exception' ) ) {
+                    if ( blessed $err and $err->isa( 'Zonemaster::Engine::Exception' ) ) {
                         die $err;    # Utility exception, pass it on
                     }
                     else {
@@ -199,7 +199,7 @@ sub run_one {
     else {
         my $zname = q{};
         foreach my $arg ( @arguments ) {
-            if ( ref($arg) eq q{Zonemaster::Zone} ) {
+            if ( ref($arg) eq q{Zonemaster::Engine::Zone} ) {
                 $zname = $arg->name;
             }
         }
@@ -212,25 +212,25 @@ sub run_one {
 sub _policy_allowed {
     my ( $name ) = @_;
 
-    return not Zonemaster::Util::policy()->{ uc( $name ) }{DISABLED};
+    return not Zonemaster::Engine::Util::policy()->{ uc( $name ) }{DISABLED};
 }
 
 1;
 
 =head1 NAME
 
-Zonemaster::Test - module to find, load and execute all test modules
+Zonemaster::Engine::Test - module to find, load and execute all test modules
 
 =head1 SYNOPSIS
 
-    my @results = Zonemaster::Test->run_all_for($zone);
-    my @results = Zonemaster::Test->run_module('DNSSEC', $zone);
+    my @results = Zonemaster::Engine::Test->run_all_for($zone);
+    my @results = Zonemaster::Engine::Test->run_module('DNSSEC', $zone);
 
 
 =head1 TEST MODULES
 
 Test modules are defined as modules with names starting with
-"Zonemaster::Test::". They are expected to provide at least four
+"Zonemaster::Engine::Test::". They are expected to provide at least four
 class methods, and optionally a fifth one.
 
 =over
@@ -238,7 +238,7 @@ class methods, and optionally a fifth one.
 =item all($zone)
 
 C<all> will be given a zone object as its only argument, and is
-epected to return a list of L<Zonemaster::Logger::Entry> objects. This
+epected to return a list of L<Zonemaster::Engine::Logger::Entry> objects. This
 is the entry point used by the C<run_all_for> and C<run_module>
 methods.
 
@@ -276,7 +276,7 @@ are their recommended default log levels.
 =item modules()
 
 Returns a list with the names of all available test modules except
-L<Zonemaster::Test::Basic> (since that one is a bit special).
+L<Zonemaster::Engine::Test::Basic> (since that one is a bit special).
 
 =item run_all_for($zone)
 
@@ -284,7 +284,7 @@ Runs all (default) tests in all test modules found, and returns a list
 of the log entry objects they returned.
 
 The order in which the test modules found will be executed is not
-defined, except that L<Zonemaster::Test::Basic> is always executed
+defined, except that L<Zonemaster::Engine::Test::Basic> is always executed
 first. If the Basic tests fail to indicate a very basic level of
 function (it must have a parent domain, and it must have at least one
 functional nameserver) for the zone, no further tests will be

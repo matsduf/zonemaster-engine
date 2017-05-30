@@ -1,4 +1,4 @@
-package Zonemaster::Zone;
+package Zonemaster::Engine::Zone;
 
 use version; our $VERSION = version->declare("v1.1.1");
 
@@ -10,14 +10,14 @@ use Moose;
 use Carp;
 use List::MoreUtils qw[uniq];
 
-use Zonemaster::DNSName;
-use Zonemaster::Recursor;
-use Zonemaster::NSArray;
+use Zonemaster::Engine::DNSName;
+use Zonemaster::Engine::Recursor;
+use Zonemaster::Engine::NSArray;
 
-has 'name' => ( is => 'ro', isa => 'Zonemaster::DNSName', required => 1, coerce => 1 );
-has 'parent' => ( is => 'ro', isa => 'Maybe[Zonemaster::Zone]', lazy_build => 1 );
+has 'name' => ( is => 'ro', isa => 'Zonemaster::Engine::DNSName', required => 1, coerce => 1 );
+has 'parent' => ( is => 'ro', isa => 'Maybe[Zonemaster::Engine::Zone]', lazy_build => 1 );
 has [ 'ns', 'glue' ] => ( is => 'ro', isa => 'ArrayRef', lazy_build => 1 );
-has [ 'ns_names', 'glue_names' ] => ( is => 'ro', isa => 'ArrayRef[Zonemaster::DNSName]', lazy_build => 1 );
+has [ 'ns_names', 'glue_names' ] => ( is => 'ro', isa => 'ArrayRef[Zonemaster::Engine::DNSName]', lazy_build => 1 );
 has 'glue_addresses' => ( is => 'ro', isa => 'ArrayRef[Net::LDNS::RR]', lazy_build => 1 );
 
 ###
@@ -31,7 +31,7 @@ sub _build_parent {
         return $self;
     }
 
-    my $pname = Zonemaster::Recursor->parent( q{} . $self->name );
+    my $pname = Zonemaster::Engine::Recursor->parent( q{} . $self->name );
     return if not $pname;
     ## no critic (Modules::RequireExplicitInclusion)
     return __PACKAGE__->new( { name => $pname } );
@@ -48,7 +48,7 @@ sub _build_glue_names {
 
     return [] if not defined $p;
 
-    return [ uniq sort map { Zonemaster::DNSName->new( lc( $_->nsdname ) ) }
+    return [ uniq sort map { Zonemaster::Engine::DNSName->new( lc( $_->nsdname ) ) }
           $p->get_records_for_name( 'ns', $self->name->string ) ];
 }
 
@@ -56,7 +56,7 @@ sub _build_glue {
     my ( $self ) = @_;
 
     my $aref = [];
-    tie @$aref, 'Zonemaster::NSArray', @{ $self->glue_names };
+    tie @$aref, 'Zonemaster::Engine::NSArray', @{ $self->glue_names };
 
     return $aref;
 }
@@ -79,7 +79,7 @@ sub _build_ns_names {
     }
     return [] if not defined $p;
 
-    return [ uniq sort map { Zonemaster::DNSName->new( lc( $_->nsdname ) ) }
+    return [ uniq sort map { Zonemaster::Engine::DNSName->new( lc( $_->nsdname ) ) }
           $p->get_records_for_name( 'ns', $self->name->string ) ];
 } ## end sub _build_ns_names
 
@@ -87,11 +87,11 @@ sub _build_ns {
     my ( $self ) = @_;
 
     if ( $self->name eq '.' ) {    # Root is a special case
-        return [ Zonemaster::Recursor->root_servers ];
+        return [ Zonemaster::Engine::Recursor->root_servers ];
     }
 
     my $aref = [];
-    tie @$aref, 'Zonemaster::NSArray', @{ $self->ns_names };
+    tie @$aref, 'Zonemaster::Engine::NSArray', @{ $self->ns_names };
 
     return $aref;
 }
@@ -119,13 +119,13 @@ sub query_one {
     # Return response from the first server that gives one
     my $i = 0;
     while ( my $ns = $self->ns->[$i] ) {
-        if ( not Zonemaster->config->ipv4_ok and $ns->address->version == 4 ) {
-            Zonemaster->logger->add( SKIP_IPV4_DISABLED => { ns => "$ns" } );
+        if ( not Zonemaster::Engine->config->ipv4_ok and $ns->address->version == 4 ) {
+            Zonemaster::Engine->logger->add( SKIP_IPV4_DISABLED => { ns => "$ns" } );
             next;
         }
 
-        if ( not Zonemaster->config->ipv6_ok and $ns->address->version == 6 ) {
-            Zonemaster->logger->add( SKIP_IPV6_DISABLED => { ns => "$ns" } );
+        if ( not Zonemaster::Engine->config->ipv6_ok and $ns->address->version == 6 ) {
+            Zonemaster::Engine->logger->add( SKIP_IPV6_DISABLED => { ns => "$ns" } );
             next;
         }
 
@@ -144,16 +144,16 @@ sub query_all {
 
     my @servers = @{ $self->ns };
 
-    if ( not Zonemaster->config->ipv4_ok ) {
+    if ( not Zonemaster::Engine->config->ipv4_ok ) {
         my @nope = grep { $_->address->version == 4 } @servers;
         @servers = grep { $_->address->version != 4 } @servers;
-        Zonemaster->logger->add( SKIP_IPV4_DISABLED => { ns => ( join ';', map { "$_" } @nope ) } );
+        Zonemaster::Engine->logger->add( SKIP_IPV4_DISABLED => { ns => ( join ';', map { "$_" } @nope ) } );
     }
 
-    if ( not Zonemaster->config->ipv6_ok ) {
+    if ( not Zonemaster::Engine->config->ipv6_ok ) {
         my @nope = grep { $_->address->version == 6 } @servers;
         @servers = grep { $_->address->version != 6 } @servers;
-        Zonemaster->logger->add( SKIP_IPV6_DISABLED => { ns => ( join ';', map { "$_" } @nope ) } );
+        Zonemaster::Engine->logger->add( SKIP_IPV6_DISABLED => { ns => ( join ';', map { "$_" } @nope ) } );
     }
 
     return [ map { $_->query( $name, $type, $flags ) } @servers ];
@@ -165,13 +165,13 @@ sub query_auth {
     # Return response from the first server that replies with AA set
     my $i = 0;
     while ( my $ns = $self->ns->[$i] ) {
-        if ( not Zonemaster->config->ipv4_ok and $ns->address->version == 4 ) {
-            Zonemaster->logger->add( SKIP_IPV4_DISABLED => { ns => "$ns" } );
+        if ( not Zonemaster::Engine->config->ipv4_ok and $ns->address->version == 4 ) {
+            Zonemaster::Engine->logger->add( SKIP_IPV4_DISABLED => { ns => "$ns" } );
             next;
         }
 
-        if ( not Zonemaster->config->ipv6_ok and $ns->address->version == 6 ) {
-            Zonemaster->logger->add( SKIP_IPV6_DISABLED => { ns => "$ns" } );
+        if ( not Zonemaster::Engine->config->ipv6_ok and $ns->address->version == 6 ) {
+            Zonemaster::Engine->logger->add( SKIP_IPV6_DISABLED => { ns => "$ns" } );
             next;
         }
 
@@ -193,13 +193,13 @@ sub query_persistent {
     # Return response from the first server that has a record like the one asked for
     my $i = 0;
     while ( my $ns = $self->ns->[$i] ) {
-        if ( not Zonemaster->config->ipv4_ok and $ns->address->version == 4 ) {
-            Zonemaster->logger->add( SKIP_IPV4_DISABLED => { ns => "$ns" } );
+        if ( not Zonemaster::Engine->config->ipv4_ok and $ns->address->version == 4 ) {
+            Zonemaster::Engine->logger->add( SKIP_IPV4_DISABLED => { ns => "$ns" } );
             next;
         }
 
-        if ( not Zonemaster->config->ipv6_ok and $ns->address->version == 6 ) {
-            Zonemaster->logger->add( SKIP_IPV6_DISABLED => { ns => "$ns" } );
+        if ( not Zonemaster::Engine->config->ipv6_ok and $ns->address->version == 6 ) {
+            Zonemaster::Engine->logger->add( SKIP_IPV6_DISABLED => { ns => "$ns" } );
             next;
         }
 
@@ -218,8 +218,8 @@ sub query_persistent {
 sub is_in_zone {
     my ( $self, $name ) = @_;
 
-    if ( not ref( $name ) or ref( $name ) ne 'Zonemaster::DNSName' ) {
-        $name = Zonemaster::DNSName->new( $name );
+    if ( not ref( $name ) or ref( $name ) ne 'Zonemaster::Engine::DNSName' ) {
+        $name = Zonemaster::Engine::DNSName->new( $name );
     }
 
     if ( scalar( @{ $self->name->labels } ) != $self->name->common( $name ) ) {
@@ -241,7 +241,7 @@ sub is_in_zone {
         return 0;    # Auth server is broken, call it a "no".
     }
 
-    if ( Zonemaster::DNSName->new( $soa->name ) eq $self->name ) {
+    if ( Zonemaster::Engine::DNSName->new( $soa->name ) eq $self->name ) {
         return 1;
     }
     else {
@@ -256,11 +256,11 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-Zonemaster::Zone - Object representing a DNS zone
+Zonemaster::Engine::Zone - Object representing a DNS zone
 
 =head1 SYNOPSIS
 
-    my $zone = Zonemaster::Zone->new({ name => 'nic.se' });
+    my $zone = Zonemaster::Engine::Zone->new({ name => 'nic.se' });
     my $packet = $zone->parent->query_one($zone->name, 'NS');
 
 
@@ -279,23 +279,23 @@ delegated.
 
 =item name
 
-A L<Zonemaster::DNSName> object representing the name of the zone.
+A L<Zonemaster::Engine::DNSName> object representing the name of the zone.
 
 =item parent
 
-A L<Zonemaster::Zone> object for this domain's parent domain. As a
+A L<Zonemaster::Engine::Zone> object for this domain's parent domain. As a
 special case, the root zone is considered to be its own parent (so
 look for that if you recurse up the tree).
 
 =item ns_names
 
-A reference to an array of L<Zonemaster::DNSName> objects, holding the
+A reference to an array of L<Zonemaster::Engine::DNSName> objects, holding the
 names of the nameservers for the domain, as returned by the first
 responding nameserver in the glue list.
 
 =item ns
 
-A reference to an array of L<Zonemaster::Nameserver> objects for the
+A reference to an array of L<Zonemaster::Engine::Nameserver> objects for the
 domain, built by taking the list returned from L<ns_names()> and
 looking up addresses for the names. One element will be added to this
 list for each unique name/IP pair. Names for which no addresses could
@@ -306,13 +306,13 @@ them all can take som considerable time.
 
 =item glue_names
 
-A reference to a an array of L<Zonemaster::DNSName> objects, holding the names
+A reference to a an array of L<Zonemaster::Engine::DNSName> objects, holding the names
 of this zones nameservers as listed at the first responding nameserver of the
 parent zone.
 
 =item glue
 
-A reference to an array of L<Zonemaster::Nameserver> objects for the
+A reference to an array of L<Zonemaster::Engine::Nameserver> objects for the
 domain, built by taking the list returned from L<glue_names()> and
 looking up addresses for the names. One element will be added to this
 list for each unique name/IP pair. Names for which no addresses could
@@ -334,7 +334,7 @@ parent domain.
 =item query_one($name[, $type[, $flags]])
 
 Sends (or retrieves from cache) a query for the given name, type and flags sent to the first nameserver in the zone's ns list. If there is a
-response, it will be returned in a L<Zonemaster::Packet> object. If the type arguments is not given, it defaults to 'A'. If the flags are not given, they default to C<class> IN and C<dnssec>, C<usevc> and C<recurse> according to configuration (which is by default off on all three).
+response, it will be returned in a L<Zonemaster::Engine::Packet> object. If the type arguments is not given, it defaults to 'A'. If the flags are not given, they default to C<class> IN and C<dnssec>, C<usevc> and C<recurse> according to configuration (which is by default off on all three).
 
 =item query_persistent($name[, $type[, $flags]])
 
@@ -350,7 +350,7 @@ first server that returns one, it returns the first packet that has the AA flag 
 =item query_all($name, $type, $flags)
 
 Sends (or retrieves from cache) queries to all the nameservers listed in the zone's ns list, and returns a reference to an array with the
-responses. The responses can be either L<Zonemaster::Packet> objects or C<undef> values. The arguments are the same as for L<query_one>.
+responses. The responses can be either L<Zonemaster::Engine::Packet> objects or C<undef> values. The arguments are the same as for L<query_one>.
 
 =item is_in_zone($name)
 

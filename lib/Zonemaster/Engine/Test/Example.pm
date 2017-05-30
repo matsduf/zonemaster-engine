@@ -1,4 +1,4 @@
-package Zonemaster::Test::Example;
+package Zonemaster::Engine::Test::Example;
 
 use version; our $VERSION = version->declare("v1.0.2");
 
@@ -11,8 +11,8 @@ use warnings;
 
 use 5.014002;
 
-use Zonemaster;
-use Zonemaster::Util;
+use Zonemaster::Engine;
+use Zonemaster::Engine::Util;
 
 ###
 ### Entry points
@@ -22,7 +22,7 @@ sub all {
     my ( $class, $zone ) = @_;
     my @results;
 
-    push @results, $class->placeholder if Zonemaster->config->should_run( 'placeholder' );
+    push @results, $class->placeholder if Zonemaster::Engine->config->should_run( 'placeholder' );
 
     return @results;
 }
@@ -38,7 +38,7 @@ sub metadata {
 }
 
 sub version {
-    return "$Zonemaster::Test::Example::VERSION";
+    return "$Zonemaster::Engine::Test::Example::VERSION";
 }
 
 sub translation {
@@ -66,11 +66,11 @@ sub placeholder {
 
 =head1 NAME
 
-Zonemaster::Test::Example - example module showing the expected structure of Zonemaster test modules
+Zonemaster::Engine::Test::Example - example module showing the expected structure of Zonemaster test modules
 
 =head1 SYNOPSIS
 
-    my @results = Zonemaster::Test::Example->all($zone);
+    my @results = Zonemaster::Engine::Test::Example->all($zone);
 
 =head1 METHODS
 

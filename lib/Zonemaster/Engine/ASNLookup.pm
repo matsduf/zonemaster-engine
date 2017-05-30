@@ -1,14 +1,14 @@
-package Zonemaster::ASNLookup;
+package Zonemaster::Engine::ASNLookup;
 
 use version; our $VERSION = version->declare("v1.0.3");
 
 use 5.014002;
 use warnings;
 
-use Zonemaster::Net::IP;
+use Zonemaster::Engine::Net::IP;
 
-use Zonemaster;
-use Zonemaster::Nameserver;
+use Zonemaster::Engine;
+use Zonemaster::Engine::Nameserver;
 
 our @roots;
 
@@ -16,11 +16,11 @@ sub get_with_prefix {
     my ( $class, $ip ) = @_;
 
     if ( not @roots ) {
-        @roots = map { Zonemaster->zone( $_ ) } @{ Zonemaster->config->asnroots };
+        @roots = map { Zonemaster::Engine->zone( $_ ) } @{ Zonemaster::Engine->config->asnroots };
     }
 
-    if ( not ref( $ip ) or not $ip->isa( 'Zonemaster::Net::IP' ) ) {
-        $ip = Zonemaster::Net::IP->new( $ip );
+    if ( not ref( $ip ) or not $ip->isa( 'Zonemaster::Engine::Net::IP' ) ) {
+        $ip = Zonemaster::Engine::Net::IP->new( $ip );
     }
 
     my $reverse = $ip->reverse_ip;
@@ -43,7 +43,7 @@ sub get_with_prefix {
                 my @fields = split( /[ ]\|[ ]?/x, $str );
                 my @asns   = split( /\s+/x,       $fields[0] );
 
-                return \@asns, Zonemaster::Net::IP->new( $fields[1] ), $str;
+                return \@asns, Zonemaster::Engine::Net::IP->new( $fields[1] ), $str;
             }
         }
     } ## end foreach my $zone ( @roots )
@@ -67,12 +67,12 @@ sub get {
 
 =head1 NAME
 
-Zonemaster::ASNLookup - do lookups of ASNs for IP addresses
+Zonemaster::Engine::ASNLookup - do lookups of ASNs for IP addresses
 
 =head1 SYNOPSIS
 
-   my ($asnref, $prefix) = Zonemaster::ASNLookup->get_with_prefix( '8.8.4.4' );
-   my $asnref = Zonemaster::ASNLookup->get( '192.168.0.1' );
+   my ($asnref, $prefix) = Zonemaster::Engine::ASNLookup->get_with_prefix( '8.8.4.4' );
+   my $asnref = Zonemaster::Engine::ASNLookup->get( '192.168.0.1' );
 
 =head1 FUNCTION
 

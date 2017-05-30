@@ -1,4 +1,4 @@
-package Zonemaster::Test::Consistency;
+package Zonemaster::Engine::Test::Consistency;
 
 use version; our $VERSION = version->declare("v1.1.1");
 
@@ -7,10 +7,10 @@ use warnings;
 
 use 5.014002;
 
-use Zonemaster;
-use Zonemaster::Util;
-use Zonemaster::Test::Address;
-use Zonemaster::Constants qw[:ip :soa];
+use Zonemaster::Engine;
+use Zonemaster::Engine::Util;
+use Zonemaster::Engine::Test::Address;
+use Zonemaster::Engine::Constants qw[:ip :soa];
 
 use List::MoreUtils qw[uniq];
 
@@ -22,19 +22,19 @@ sub all {
     my ( $class, $zone ) = @_;
     my @results;
 
-    if ( Zonemaster->config->should_run( 'consistency01' ) ) {
+    if ( Zonemaster::Engine->config->should_run( 'consistency01' ) ) {
         push @results, $class->consistency01( $zone );
     }
-    if ( Zonemaster->config->should_run( 'consistency02' ) ) {
+    if ( Zonemaster::Engine->config->should_run( 'consistency02' ) ) {
         push @results, $class->consistency02( $zone );
     }
-    if ( Zonemaster->config->should_run( 'consistency03' ) ) {
+    if ( Zonemaster::Engine->config->should_run( 'consistency03' ) ) {
         push @results, $class->consistency03( $zone );
     }
-    if ( Zonemaster->config->should_run( 'consistency04' ) ) {
+    if ( Zonemaster::Engine->config->should_run( 'consistency04' ) ) {
         push @results, $class->consistency04( $zone );
     }
-    if ( Zonemaster->config->should_run( 'consistency05' ) ) {
+    if ( Zonemaster::Engine->config->should_run( 'consistency05' ) ) {
         push @results, $class->consistency05( $zone );
     }
 
@@ -136,7 +136,7 @@ sub translation {
 } ## end sub translation
 
 sub version {
-    return "$Zonemaster::Test::Consistency::VERSION";
+    return "$Zonemaster::Engine::Test::Consistency::VERSION";
 }
 
 ###
@@ -151,12 +151,12 @@ sub consistency01 {
     my $query_type = q{SOA};
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
         next if $nsnames_and_ip{ $local_ns->name->string . q{/} . $local_ns->address->short };
 
-        if ( not Zonemaster->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
+        if ( not Zonemaster::Engine->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
             push @results,
               info(
                 IPV6_DISABLED => {
@@ -168,7 +168,7 @@ sub consistency01 {
             next;
         }
 
-        if ( not Zonemaster->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
+        if ( not Zonemaster::Engine->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
             push @results,
               info(
                 IPV4_DISABLED => {
@@ -209,7 +209,7 @@ sub consistency01 {
             push @{ $serials{ $soa->serial } }, $local_ns->name->string . q{/} . $local_ns->address->short;
             $nsnames_and_ip{ $local_ns->name->string . q{/} . $local_ns->address->short }++;
         }
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     my @serial_numbers = sort keys %serials;
     if ( scalar( @serial_numbers ) == 1 ) {
@@ -259,12 +259,12 @@ sub consistency02 {
     my $query_type = q{SOA};
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
         next if $nsnames_and_ip{ $local_ns->name->string . q{/} . $local_ns->address->short };
 
-        if ( not Zonemaster->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
+        if ( not Zonemaster::Engine->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
             push @results,
               info(
                 IPV6_DISABLED => {
@@ -276,7 +276,7 @@ sub consistency02 {
             next;
         }
 
-        if ( not Zonemaster->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
+        if ( not Zonemaster::Engine->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
             push @results,
               info(
                 IPV4_DISABLED => {
@@ -317,7 +317,7 @@ sub consistency02 {
             push @{ $rnames{ lc( $soa->rname ) } }, $local_ns->name->string . q{/} . $local_ns->address->short;
             $nsnames_and_ip{ $local_ns->name->string . q{/} . $local_ns->address->short }++;
         }
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     if ( scalar( keys %rnames ) == 1 ) {
         push @results,
@@ -356,12 +356,12 @@ sub consistency03 {
     my $query_type = q{SOA};
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
         next if $nsnames_and_ip{ $local_ns->name->string . q{/} . $local_ns->address->short };
 
-        if ( not Zonemaster->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
+        if ( not Zonemaster::Engine->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
             push @results,
               info(
                 IPV6_DISABLED => {
@@ -373,7 +373,7 @@ sub consistency03 {
             next;
         }
 
-        if ( not Zonemaster->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
+        if ( not Zonemaster::Engine->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
             push @results,
               info(
                 IPV4_DISABLED => {
@@ -417,7 +417,7 @@ sub consistency03 {
               $local_ns->name->string . q{/} . $local_ns->address->short;
             $nsnames_and_ip{ $local_ns->name->string . q{/} . $local_ns->address->short }++;
         }
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     if ( scalar( keys %time_parameter_sets ) == 1 ) {
         my ( $refresh, $retry, $expire, $minimum ) = split /;/sxm, ( keys %time_parameter_sets )[0];
@@ -464,12 +464,12 @@ sub consistency04 {
     my $query_type = q{NS};
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
         next if $nsnames_and_ip{ $local_ns->name->string . q{/} . $local_ns->address->short };
 
-        if ( not Zonemaster->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
+        if ( not Zonemaster::Engine->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
             push @results,
               info(
                 IPV6_DISABLED => {
@@ -481,7 +481,7 @@ sub consistency04 {
             next;
         }
 
-        if ( not Zonemaster->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
+        if ( not Zonemaster::Engine->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
             push @results,
               info(
                 IPV4_DISABLED => {
@@ -522,7 +522,7 @@ sub consistency04 {
             push @{ $ns_sets{ join( q{,}, @ns ) } }, $local_ns->name->string . q{/} . $local_ns->address->short;
             $nsnames_and_ip{ $local_ns->name->string . q{/} . $local_ns->address->short }++;
         }
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     if ( scalar( keys %ns_sets ) == 1 ) {
         push @results,
@@ -558,10 +558,10 @@ sub consistency05 {
     my @results;
 
     my %addresses;
-    foreach my $address ( uniq map { lc( $_->address->short ) } @{ Zonemaster::TestMethods->method4( $zone ) } ) {
+    foreach my $address ( uniq map { lc( $_->address->short ) } @{ Zonemaster::Engine::TestMethods->method4( $zone ) } ) {
         $addresses{$address} += 1;
     }
-    foreach my $address ( uniq map { lc( $_->address->short ) } @{ Zonemaster::TestMethods->method5( $zone ) } ) {
+    foreach my $address ( uniq map { lc( $_->address->short ) } @{ Zonemaster::Engine::TestMethods->method5( $zone ) } ) {
         $addresses{$address} -= 1;
     }
 
@@ -613,11 +613,11 @@ sub consistency05 {
 
 =head1 NAME
 
-Zonemaster::Test::Consistency - Consistency module showing the expected structure of Zonemaster test modules
+Zonemaster::Engine::Test::Consistency - Consistency module showing the expected structure of Zonemaster test modules
 
 =head1 SYNOPSIS
 
-    my @results = Zonemaster::Test::Consistency->all($zone);
+    my @results = Zonemaster::Engine::Test::Consistency->all($zone);
 
 =head1 METHODS
 

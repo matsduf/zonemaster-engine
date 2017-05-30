@@ -1,19 +1,19 @@
-package Zonemaster::Logger;
+package Zonemaster::Engine::Logger;
 
 use version; our $VERSION = version->declare("v1.0.4");
 
 use 5.014002;
 use Moose;
 
-use Zonemaster::Logger::Entry;
-use Zonemaster;
+use Zonemaster::Engine::Logger::Entry;
+use Zonemaster::Engine;
 use List::MoreUtils qw[none any];
 use Scalar::Util qw[blessed];
 use JSON::PP;
 
 has 'entries' => (
     is      => 'ro',
-    isa     => 'ArrayRef[Zonemaster::Logger::Entry]',
+    isa     => 'ArrayRef[Zonemaster::Engine::Logger::Entry]',
     default => sub { [] }
 );
 has 'callback' => ( is => 'rw', isa => 'CodeRef', required => 0, clearer => 'clear_callback' );
@@ -22,7 +22,7 @@ sub add {
     my ( $self, $tag, $argref ) = @_;
 
     my $new =
-      Zonemaster::Logger::Entry->new( { tag => uc( $tag ), args => $argref } );
+      Zonemaster::Engine::Logger::Entry->new( { tag => uc( $tag ), args => $argref } );
     $self->_check_filter( $new );
     push @{ $self->entries }, $new;
 
@@ -30,7 +30,7 @@ sub add {
         eval { $self->callback->( $new ) };
         if ( $@ ) {
             my $err = $@;
-            if ( blessed( $err ) and $err->isa( "Zonemaster::Exception" ) ) {
+            if ( blessed( $err ) and $err->isa( "Zonemaster::Engine::Exception" ) ) {
                 die $err;
             }
             else {
@@ -45,7 +45,7 @@ sub add {
 
 sub _check_filter {
     my ( $self, $entry ) = @_;
-    my $config = Zonemaster->config->logfilter;
+    my $config = Zonemaster::Engine->config->logfilter;
 
     if ( $config ) {
         if ( $config->{ $entry->module } ) {
@@ -84,7 +84,7 @@ sub _check_filter {
 } ## end sub _check_filter
 
 sub start_time_now {
-    Zonemaster::Logger::Entry->start_time_now();
+    Zonemaster::Engine::Logger::Entry->start_time_now();
     return;
 }
 
@@ -101,7 +101,7 @@ sub clear_history {
 sub get_max_level {
     my ( $self ) = @_;
 
-    my %levels = reverse Zonemaster::Logger::Entry->levels();
+    my %levels = reverse Zonemaster::Engine::Logger::Entry->levels();
     my $level  = 0;
 
     foreach ( @{ $self->entries } ) {
@@ -114,7 +114,7 @@ sub get_max_level {
 sub json {
     my ( $self, $min_level ) = @_;
     my $json    = JSON::PP->new->allow_blessed->convert_blessed->canonical;
-    my %numeric = Zonemaster::Logger::Entry->levels();
+    my %numeric = Zonemaster::Engine::Logger::Entry->levels();
 
     my @msg = @{ $self->entries };
 
@@ -144,11 +144,11 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-Zonemaster::Logger - class that holds L<Zonemaster::Logger::Entry> objects.
+Zonemaster::Engine::Logger - class that holds L<Zonemaster::Engine::Logger::Entry> objects.
 
 =head1 SYNOPSIS
 
-    my $logger = Zonemaster::Logger->new;
+    my $logger = Zonemaster::Engine::Logger->new;
     $logger->add( TAG => {some => 'arguments'});
 
 =head1 ATTRIBUTES
@@ -157,7 +157,7 @@ Zonemaster::Logger - class that holds L<Zonemaster::Logger::Entry> objects.
 
 =item entries
 
-A reference to an array holding L<Zonemaster::Logger::Entry> objects.
+A reference to an array holding L<Zonemaster::Engine::Logger::Entry> objects.
 
 =item callback($coderef)
 
@@ -166,11 +166,11 @@ log entry is added. The referenced code will be called with the newly created
 entry as its single argument. The return value of the called code is ignored.
 
 If the called code throws an exception, and the exception is not an object of
-class L<Zonemaster::Exception> (or a subclass of it), the exception will be
+class L<Zonemaster::Engine::Exception> (or a subclass of it), the exception will be
 logged as a system message at default level C<CRITICAL> and the callback
 attribute will be cleared.
 
-If an exception that is of (sub)class L<Zonemaster::Exception> is called, the
+If an exception that is of (sub)class L<Zonemaster::Engine::Exception> is called, the
 exception will simply be rethrown until it reaches the code that started the
 test run that logged the message.
 

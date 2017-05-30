@@ -1,4 +1,4 @@
-package Zonemaster::Test::Delegation;
+package Zonemaster::Engine::Test::Delegation;
 
 use version; our $VERSION = version->declare("v1.0.5");
 
@@ -7,14 +7,14 @@ use warnings;
 
 use 5.014002;
 
-use Zonemaster;
-use Zonemaster::Util;
-use Zonemaster::Test::Address;
-use Zonemaster::Test::Syntax;
-use Zonemaster::TestMethods;
-use Zonemaster::Constants ':all';
+use Zonemaster::Engine;
+use Zonemaster::Engine::Util;
+use Zonemaster::Engine::Test::Address;
+use Zonemaster::Engine::Test::Syntax;
+use Zonemaster::Engine::TestMethods;
+use Zonemaster::Engine::Constants ':all';
 
-use Zonemaster::Net::IP;
+use Zonemaster::Engine::Net::IP;
 use List::MoreUtils qw[uniq];
 use Net::LDNS::Packet;
 use Net::LDNS::RR;
@@ -27,13 +27,13 @@ sub all {
     my ( $class, $zone ) = @_;
     my @results;
 
-    push @results, $class->delegation01( $zone ) if Zonemaster->config->should_run( 'delegation01' );
-    push @results, $class->delegation02( $zone ) if Zonemaster->config->should_run( 'delegation02' );
-    push @results, $class->delegation03( $zone ) if Zonemaster->config->should_run( 'delegation03' );
-    push @results, $class->delegation04( $zone ) if Zonemaster->config->should_run( 'delegation04' );
-    push @results, $class->delegation05( $zone ) if Zonemaster->config->should_run( 'delegation05' );
-    push @results, $class->delegation06( $zone ) if Zonemaster->config->should_run( 'delegation06' );
-    push @results, $class->delegation07( $zone ) if Zonemaster->config->should_run( 'delegation07' );
+    push @results, $class->delegation01( $zone ) if Zonemaster::Engine->config->should_run( 'delegation01' );
+    push @results, $class->delegation02( $zone ) if Zonemaster::Engine->config->should_run( 'delegation02' );
+    push @results, $class->delegation03( $zone ) if Zonemaster::Engine->config->should_run( 'delegation03' );
+    push @results, $class->delegation04( $zone ) if Zonemaster::Engine->config->should_run( 'delegation04' );
+    push @results, $class->delegation05( $zone ) if Zonemaster::Engine->config->should_run( 'delegation05' );
+    push @results, $class->delegation06( $zone ) if Zonemaster::Engine->config->should_run( 'delegation06' );
+    push @results, $class->delegation07( $zone ) if Zonemaster::Engine->config->should_run( 'delegation07' );
 
     return @results;
 }
@@ -128,7 +128,7 @@ sub translation {
 } ## end sub translation
 
 sub version {
-    return "$Zonemaster::Test::Delegation::VERSION";
+    return "$Zonemaster::Engine::Test::Delegation::VERSION";
 }
 
 ###
@@ -139,7 +139,7 @@ sub delegation01 {
     my ( $class, $zone ) = @_;
     my @results;
 
-    my @parent_nsnames = map { $_->string } @{ Zonemaster::TestMethods->method2( $zone ) };
+    my @parent_nsnames = map { $_->string } @{ Zonemaster::Engine::TestMethods->method2( $zone ) };
 
     if ( scalar( @parent_nsnames ) >= $MINIMUM_NUMBER_OF_NAMESERVERS ) {
         push @results,
@@ -162,7 +162,7 @@ sub delegation01 {
           );
     }
 
-    my @child_nsnames = map { $_->string } @{ Zonemaster::TestMethods->method3( $zone ) };
+    my @child_nsnames = map { $_->string } @{ Zonemaster::Engine::TestMethods->method3( $zone ) };
 
     if ( scalar( @child_nsnames ) >= $MINIMUM_NUMBER_OF_NAMESERVERS ) {
         push @results,
@@ -185,8 +185,8 @@ sub delegation01 {
           );
     }
 
-    my @all_nsnames = uniq map { $_->string } @{ Zonemaster::TestMethods->method2( $zone ) },
-      @{ Zonemaster::TestMethods->method3( $zone ) };
+    my @all_nsnames = uniq map { $_->string } @{ Zonemaster::Engine::TestMethods->method2( $zone ) },
+      @{ Zonemaster::Engine::TestMethods->method3( $zone ) };
 
     if ( scalar( @all_nsnames ) >= $MINIMUM_NUMBER_OF_NAMESERVERS ) {
         push @results,
@@ -219,7 +219,7 @@ sub delegation02 {
     my %ips;
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
         next if $nsnames_and_ip{ $local_ns->name->string . q{/} . $local_ns->address->short };
@@ -254,12 +254,12 @@ sub delegation03 {
     my @results;
     my %nsnames_and_ip;
 
-    my @nsnames = uniq map { $_->string } @{ Zonemaster::TestMethods->method2( $zone ) },
-      @{ Zonemaster::TestMethods->method3( $zone ) };
+    my @nsnames = uniq map { $_->string } @{ Zonemaster::Engine::TestMethods->method2( $zone ) },
+      @{ Zonemaster::Engine::TestMethods->method3( $zone ) };
     my @needs_glue;
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
         next if $nsnames_and_ip{ $local_ns->name->string . q{/} . $local_ns->address->short };
         if ( $zone->is_in_zone( $local_ns->name->string ) ) {
@@ -320,10 +320,10 @@ sub delegation04 {
     my $query_type = q{SOA};
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
-        if ( not Zonemaster->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
+        if ( not Zonemaster::Engine->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
             push @results,
               info(
                 IPV6_DISABLED => {
@@ -335,7 +335,7 @@ sub delegation04 {
             next;
         }
 
-        if ( not Zonemaster->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
+        if ( not Zonemaster::Engine->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
             push @results,
               info(
                 IPV4_DISABLED => {
@@ -368,12 +368,12 @@ sub delegation04 {
         }
 
         $nsnames{ $local_ns->name }++;
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     if (
         (
-               scalar @{ Zonemaster::TestMethods->method4( $zone ) }
-            or scalar @{ Zonemaster::TestMethods->method5( $zone ) }
+               scalar @{ Zonemaster::Engine::TestMethods->method4( $zone ) }
+            or scalar @{ Zonemaster::Engine::TestMethods->method5( $zone ) }
         )
         and not scalar @results
         and scalar @authoritatives
@@ -394,8 +394,8 @@ sub delegation05 {
     my ( $class, $zone ) = @_;
     my @results;
 
-    my @nsnames = uniq map { $_->string } @{ Zonemaster::TestMethods->method2( $zone ) },
-      @{ Zonemaster::TestMethods->method3( $zone ) };
+    my @nsnames = uniq map { $_->string } @{ Zonemaster::Engine::TestMethods->method2( $zone ) },
+      @{ Zonemaster::Engine::TestMethods->method3( $zone ) };
 
     foreach my $local_nsname ( @nsnames ) {
 
@@ -418,8 +418,8 @@ sub delegation05 {
 
     if (
         (
-               scalar @{ Zonemaster::TestMethods->method2( $zone ) }
-            or scalar @{ Zonemaster::TestMethods->method3( $zone ) }
+               scalar @{ Zonemaster::Engine::TestMethods->method2( $zone ) }
+            or scalar @{ Zonemaster::Engine::TestMethods->method3( $zone ) }
         )
         and not scalar @results
       )
@@ -437,10 +437,10 @@ sub delegation06 {
     my $query_type = q{SOA};
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
-        if ( not Zonemaster->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
+        if ( not Zonemaster::Engine->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
             push @results,
               info(
                 IPV6_DISABLED => {
@@ -452,7 +452,7 @@ sub delegation06 {
             next;
         }
 
-        if ( not Zonemaster->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
+        if ( not Zonemaster::Engine->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
             push @results,
               info(
                 IPV4_DISABLED => {
@@ -479,12 +479,12 @@ sub delegation06 {
         }
 
         $nsnames{ $local_ns->name->string }++;
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     if (
         (
-               scalar @{ Zonemaster::TestMethods->method4( $zone ) }
-            or scalar @{ Zonemaster::TestMethods->method5( $zone ) }
+               scalar @{ Zonemaster::Engine::TestMethods->method4( $zone ) }
+            or scalar @{ Zonemaster::Engine::TestMethods->method5( $zone ) }
         )
         and not scalar @results
       )
@@ -500,10 +500,10 @@ sub delegation07 {
     my @results;
 
     my %names;
-    foreach my $name ( @{ Zonemaster::TestMethods->method2( $zone ) } ) {
+    foreach my $name ( @{ Zonemaster::Engine::TestMethods->method2( $zone ) } ) {
         $names{$name} += 1;
     }
-    foreach my $name ( @{ Zonemaster::TestMethods->method3( $zone ) } ) {
+    foreach my $name ( @{ Zonemaster::Engine::TestMethods->method3( $zone ) } ) {
         $names{$name} -= 1;
     }
 
@@ -576,11 +576,11 @@ sub _max_length_name_for {
 
 =head1 NAME
 
-Zonemaster::Test::Delegation - Tests regarding delegation details
+Zonemaster::Engine::Test::Delegation - Tests regarding delegation details
 
 =head1 SYNOPSIS
 
-    my @results = Zonemaster::Test::Delegation->all($zone);
+    my @results = Zonemaster::Engine::Test::Delegation->all($zone);
 
 =head1 METHODS
 

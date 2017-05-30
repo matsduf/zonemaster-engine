@@ -1,4 +1,4 @@
-package Zonemaster::Recursor;
+package Zonemaster::Engine::Recursor;
 
 use version; our $VERSION = version->declare("v1.0.4");
 
@@ -7,9 +7,9 @@ use warnings;
 
 use Moose;
 use JSON::PP;
-use Zonemaster::Util;
-use Zonemaster::Net::IP;
-use Zonemaster;
+use Zonemaster::Engine::Util;
+use Zonemaster::Engine::Net::IP;
+use Zonemaster::Engine;
 
 my $seed_data;
 
@@ -27,7 +27,7 @@ sub recurse {
     $type  //= 'A';
     $class //= 'IN';
 
-    Zonemaster->logger->add( RECURSE => { name => $name, type => $type, class => $class } );
+    Zonemaster::Engine->logger->add( RECURSE => { name => $name, type => $type, class => $class } );
 
     if ( exists $recurse_cache{$name}{$type}{$class} ) {
         return $recurse_cache{$name}{$type}{$class};
@@ -101,7 +101,7 @@ sub _recurse {
     while ( my $ns = pop @{ $state->{ns} } ) {
         my $nsname    = $ns->can( 'name' )    ? q{} . $ns->name  : q{};
         my $nsaddress = $ns->can( 'address' ) ? $ns->address->ip : q{};
-        Zonemaster->logger->add(
+        Zonemaster::Engine->logger->add(
             RECURSE_QUERY => {
                 source  => "$ns",
                 ns      => $nsname,
@@ -273,7 +273,7 @@ sub get_addresses_for {
 
     foreach my $rr ( sort { $a->address cmp $b->address } @rrs ) {
         if ( name( $rr->name ) eq $name or $cname{ $rr->name } ) {
-            push @res, Zonemaster::Net::IP->new( $rr->address );
+            push @res, Zonemaster::Engine::Net::IP->new( $rr->address );
         }
     }
 
@@ -291,7 +291,7 @@ sub clear_cache {
 }
 
 sub root_servers {
-    return map { Zonemaster::Util::ns( $_->{name}, $_->{address} ) }
+    return map { Zonemaster::Engine::Util::ns( $_->{name}, $_->{address} ) }
       sort { $a->{name} cmp $b->{name} } @{ $seed_data->{'.'} };
 }
 
@@ -302,12 +302,12 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-Zonemaster::Recursor - recursive resolver for Zonemaster
+Zonemaster::Engine::Recursor - recursive resolver for Zonemaster
 
 =head1 SYNOPSIS
 
-    my $packet = Zonemaster::Recursor->recurse($name, $type, $class);
-    my $pname = Zonemaster::Recursor->parent('example.org');
+    my $packet = Zonemaster::Engine::Recursor->recurse($name, $type, $class);
+    my $pname = Zonemaster::Engine::Recursor->parent('example.org');
 
 =head1 METHODS
 
@@ -329,7 +329,7 @@ Internal method. Takes a packet and a recursion state and returns a list of ns o
 =item get_addresses_for($name[, $state])
 
 Takes a name and returns a (possibly empty) list of IP addresses for
-that name (in the form of L<Zonemaster::Net::IP> objects). When used
+that name (in the form of L<Zonemaster::Engine::Net::IP> objects). When used
 internally by the recursor it's passed a recursion state as its second
 argument.
 

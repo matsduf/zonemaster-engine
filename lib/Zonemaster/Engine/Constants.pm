@@ -1,4 +1,4 @@
-package Zonemaster::Constants;
+package Zonemaster::Engine::Constants;
 
 use version; our $VERSION = version->declare("v1.2.1");
 
@@ -10,7 +10,7 @@ use Carp;
 use English qw( -no_match_vars ) ;
 
 use parent 'Exporter';
-use Zonemaster::Net::IP;
+use Zonemaster::Engine::Net::IP;
 use Text::CSV;
 use File::ShareDir qw[dist_dir dist_file];
 
@@ -105,7 +105,7 @@ sub _extract_iana_ip_blocks {
     foreach my $file_details ( @files_details ) {
         my $first_line = 1;
         next if ${$file_details}{ip_version} != $ip_version;
-        my $data_location = dist_file('Zonemaster', ${$file_details}{name});
+        my $data_location = dist_file('Zonemaster-Engine', ${$file_details}{name});
         open(my $data, '<:encoding(utf8)', $data_location) or croak "Cannot open '${data_location}' : ${OS_ERROR}";
         while (my $fields = $csv->getline( $data )) {
             if ( $first_line ) {
@@ -116,7 +116,7 @@ sub _extract_iana_ip_blocks {
             $address_data =~ s/[ ]+//smx;
             foreach my $address_item ( split /,/smx, $address_data ) {
                 $address_item =~ s/(\A.+\/\d+).*\z/$1/smx;
-                push @list, { ip => Zonemaster::Net::IP->new( $address_item ), name => $fields->[1], reference => $fields->[2] };
+                push @list, { ip => Zonemaster::Engine::Net::IP->new( $address_item ), name => $fields->[1], reference => $fields->[2] };
             }
         }
         close $data or croak "Cannot close '${data_location}' : ${OS_ERROR}";
@@ -129,11 +129,11 @@ sub _extract_iana_ip_blocks {
 
 =head1 NAME
 
-Zonemaster::Constants - module holding constants used in test modules
+Zonemaster::Engine::Constants - module holding constants used in test modules
 
 =head1 SYNOPSIS
 
-   use Zonemaster::Constants ':all';
+   use Zonemaster::Engine::Constants ':all';
 
 =head1 EXPORTED GROUPS
 

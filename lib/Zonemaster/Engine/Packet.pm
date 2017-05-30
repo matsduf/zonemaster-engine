@@ -1,4 +1,4 @@
-package Zonemaster::Packet;
+package Zonemaster::Engine::Packet;
 
 use version; our $VERSION = version->declare("v1.0.2");
 
@@ -6,7 +6,7 @@ use 5.014002;
 use warnings;
 
 use Moose;
-use Zonemaster::Util;
+use Zonemaster::Engine::Util;
 
 has 'packet' => (
     is       => 'ro',
@@ -43,7 +43,7 @@ sub no_such_record {
 
     if ( $self->type eq 'nodata' ) {
         my ( $q ) = $self->question;
-        Zonemaster::Util::info( NO_SUCH_RECORD => { name => Zonemaster::Util::name( $q->name ), type => $q->type } );
+        Zonemaster::Engine::Util::info( NO_SUCH_RECORD => { name => Zonemaster::Engine::Util::name( $q->name ), type => $q->type } );
 
         return 1;
     }
@@ -72,11 +72,11 @@ sub is_redirect {
     if ( $self->type eq 'referral' ) {
         my ( $q ) = $self->question;
         my ( $a ) = $self->authority;
-        Zonemaster::Util::info(
+        Zonemaster::Engine::Util::info(
             IS_REDIRECT => {
-                name => Zonemaster::Util::name( $q->name ),
+                name => Zonemaster::Engine::Util::name( $q->name ),
                 type => $q->type,
-                to   => Zonemaster::Util::name( $a->name )
+                to   => Zonemaster::Engine::Util::name( $a->name )
             }
         );
 
@@ -140,7 +140,7 @@ sub answerfrom {
 sub TO_JSON {
     my ( $self ) = @_;
 
-    return { 'Zonemaster::Packet' => $self->packet };
+    return { 'Zonemaster::Engine::Packet' => $self->packet };
 }
 
 no Moose;
@@ -150,7 +150,7 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-Zonemaster::Packet - wrapping object for L<Net::LDNS::Packet> objects
+Zonemaster::Engine::Packet - wrapping object for L<Net::LDNS::Packet> objects
 
 =head1 SYNOPSIS
 

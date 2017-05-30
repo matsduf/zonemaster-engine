@@ -1,4 +1,4 @@
-package Zonemaster::Nameserver::Cache;
+package Zonemaster::Engine::Nameserver::Cache;
 
 use version; our $VERSION = version->declare("v1.0.3");
 
@@ -6,12 +6,12 @@ use 5.014002;
 use warnings;
 
 use Moose;
-use Zonemaster;
+use Zonemaster::Engine;
 
 our %object_cache;
 
 has 'data' => ( is => 'ro', isa => 'HashRef', default => sub { {} } );
-has 'address' => ( is => 'ro', isa => 'Zonemaster::Net::IP', required => 1 );
+has 'address' => ( is => 'ro', isa => 'Zonemaster::Engine::Net::IP', required => 1 );
 
 around 'new' => sub {
     my $orig = shift;
@@ -20,11 +20,11 @@ around 'new' => sub {
     my $obj = $self->$orig( @_ );
 
     if ( not exists $object_cache{ $obj->address->ip } ) {
-        Zonemaster->logger->add( CACHE_CREATED => { ip => $obj->address->ip } );
+        Zonemaster::Engine->logger->add( CACHE_CREATED => { ip => $obj->address->ip } );
         $object_cache{ $obj->address->ip } = $obj;
     }
 
-    Zonemaster->logger->add( CACHE_FETCHED => { ip => $obj->address->ip } );
+    Zonemaster::Engine->logger->add( CACHE_FETCHED => { ip => $obj->address->ip } );
     return $object_cache{ $obj->address->ip };
 };
 
@@ -41,7 +41,7 @@ __PACKAGE__->meta->make_immutable( inline_constructor => 0 );
 
 =head1 NAME
 
-Zonemaster::Nameserver::Cache - shared caches for nameserver objects
+Zonemaster::Engine::Nameserver::Cache - shared caches for nameserver objects
 
 =head1 SYNOPSIS
 
@@ -53,7 +53,7 @@ Zonemaster::Nameserver::Cache - shared caches for nameserver objects
 
 =item address
 
-A L<Zonemaster::Net::IP> object holding the nameserver's address.
+A L<Zonemaster::Engine::Net::IP> object holding the nameserver's address.
 
 =item data
 

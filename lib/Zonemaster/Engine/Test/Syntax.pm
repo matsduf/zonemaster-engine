@@ -1,4 +1,4 @@
-package Zonemaster::Test::Syntax;
+package Zonemaster::Engine::Test::Syntax;
 
 use version; our $VERSION = version->declare("v1.0.2");
 
@@ -7,12 +7,12 @@ use warnings;
 
 use 5.014002;
 
-use Zonemaster;
-use Zonemaster::Util;
-use Zonemaster::Recursor;
-use Zonemaster::DNSName;
-use Zonemaster::TestMethods;
-use Zonemaster::Constants qw[:name];
+use Zonemaster::Engine;
+use Zonemaster::Engine::Util;
+use Zonemaster::Engine::Recursor;
+use Zonemaster::Engine::DNSName;
+use Zonemaster::Engine::TestMethods;
+use Zonemaster::Engine::Constants qw[:name];
 
 use Carp;
 
@@ -28,26 +28,26 @@ sub all {
     my ( $class, $zone ) = @_;
     my @results;
 
-    push @results, $class->syntax01( $zone->name ) if Zonemaster->config->should_run( 'syntax01' );
-    push @results, $class->syntax02( $zone->name ) if Zonemaster->config->should_run( 'syntax02' );
-    push @results, $class->syntax03( $zone->name ) if Zonemaster->config->should_run( 'syntax03' );
+    push @results, $class->syntax01( $zone->name ) if Zonemaster::Engine->config->should_run( 'syntax01' );
+    push @results, $class->syntax02( $zone->name ) if Zonemaster::Engine->config->should_run( 'syntax02' );
+    push @results, $class->syntax03( $zone->name ) if Zonemaster::Engine->config->should_run( 'syntax03' );
 
     if ( any { $_->tag eq q{ONLY_ALLOWED_CHARS} } @results ) {
 
-        foreach my $local_nsname ( uniq map { $_->string } @{ Zonemaster::TestMethods->method2( $zone ) },
-            @{ Zonemaster::TestMethods->method3( $zone ) } )
+        foreach my $local_nsname ( uniq map { $_->string } @{ Zonemaster::Engine::TestMethods->method2( $zone ) },
+            @{ Zonemaster::Engine::TestMethods->method3( $zone ) } )
         {
-            push @results, $class->syntax04( $local_nsname ) if Zonemaster->config->should_run( 'syntax04' );
+            push @results, $class->syntax04( $local_nsname ) if Zonemaster::Engine->config->should_run( 'syntax04' );
         }
 
-        push @results, $class->syntax05( $zone ) if Zonemaster->config->should_run( 'syntax05' );
+        push @results, $class->syntax05( $zone ) if Zonemaster::Engine->config->should_run( 'syntax05' );
 
         if ( none { $_->tag eq q{NO_RESPONSE_SOA_QUERY} } @results ) {
-            push @results, $class->syntax06( $zone ) if Zonemaster->config->should_run( 'syntax06' );
-            push @results, $class->syntax07( $zone ) if Zonemaster->config->should_run( 'syntax07' );
+            push @results, $class->syntax06( $zone ) if Zonemaster::Engine->config->should_run( 'syntax06' );
+            push @results, $class->syntax07( $zone ) if Zonemaster::Engine->config->should_run( 'syntax07' );
         }
 
-        push @results, $class->syntax08( $zone ) if Zonemaster->config->should_run( 'syntax08' );
+        push @results, $class->syntax08( $zone ) if Zonemaster::Engine->config->should_run( 'syntax08' );
 
     }
 
@@ -159,7 +159,7 @@ sub translation {
 } ## end sub translation
 
 sub version {
-    return "$Zonemaster::Test::Syntax::VERSION";
+    return "$Zonemaster::Engine::Test::Syntax::VERSION";
 }
 
 ###
@@ -441,10 +441,10 @@ sub get_name {
     if ( not ref $item ) {
         $name = name( $item );
     }
-    elsif ( ref( $item ) eq q{Zonemaster::Zone} ) {
+    elsif ( ref( $item ) eq q{Zonemaster::Engine::Zone} ) {
         $name = $item->name;
     }
-    elsif ( ref( $item ) eq q{Zonemaster::DNSName} ) {
+    elsif ( ref( $item ) eq q{Zonemaster::Engine::DNSName} ) {
         $name = $item;
     }
 
@@ -513,11 +513,11 @@ sub check_name_syntax {
 
 =head1 NAME
 
-Zonemaster::Test::Syntax - test validating the syntax of host names and other data
+Zonemaster::Engine::Test::Syntax - test validating the syntax of host names and other data
 
 =head1 SYNOPSIS
 
-    my @results = Zonemaster::Test::Syntax->all($zone);
+    my @results = Zonemaster::Engine::Test::Syntax->all($zone);
 
 =head1 METHODS
 
@@ -548,27 +548,27 @@ Returns a version string for the module.
 
 =item syntax01($name)
 
-Verifies that the name (Zonemaster::DNSName) given contains only allowed characters.
+Verifies that the name (Zonemaster::Engine::DNSName) given contains only allowed characters.
 
 =item syntax02($name)
 
-Verifies that the name (Zonemaster::DNSName) given does not start or end with a hyphen ('-').
+Verifies that the name (Zonemaster::Engine::DNSName) given does not start or end with a hyphen ('-').
 
 =item syntax03($name)
 
-Verifies that the name (Zonemaster::DNSName) given does not contain a hyphen in 3rd and 4th position (in the exception of 'xn--').
+Verifies that the name (Zonemaster::Engine::DNSName) given does not contain a hyphen in 3rd and 4th position (in the exception of 'xn--').
 
 =item syntax04($name)
 
-Verify that a nameserver (Zonemaster::DNSName) given is conform to previous syntax rules. It also verify name total length as well as labels.
+Verify that a nameserver (Zonemaster::Engine::DNSName) given is conform to previous syntax rules. It also verify name total length as well as labels.
 
 =item syntax05($zone)
 
-Verify that a SOA rname (Zonemaster::DNSName) given has a conform usage of at sign (@).
+Verify that a SOA rname (Zonemaster::Engine::DNSName) given has a conform usage of at sign (@).
 
 =item syntax06($zone)
 
-Verify that a SOA rname (Zonemaster::DNSName) given is RFC822 compliant.
+Verify that a SOA rname (Zonemaster::Engine::DNSName) given is RFC822 compliant.
 
 =item syntax07($zone)
 
@@ -576,7 +576,7 @@ Verify that SOA mname of zone given is conform to previous syntax rules (syntax0
 
 =item syntax08(@mx_names)
 
-Verify that MX name (Zonemaster::DNSName) given is conform to previous syntax rules (syntax01, syntax02, syntax03). It also verify name total length as well as labels.
+Verify that MX name (Zonemaster::Engine::DNSName) given is conform to previous syntax rules (syntax01, syntax02, syntax03). It also verify name total length as well as labels.
 
 =back
 
@@ -586,7 +586,7 @@ Verify that MX name (Zonemaster::DNSName) given is conform to previous syntax ru
 
 =item get_name($item)
 
-Converts argument to a L<Zonemaster::DNSName> object.
+Converts argument to a L<Zonemaster::Engine::DNSName> object.
 
 =item check_name_syntax
 

@@ -1,4 +1,4 @@
-package Zonemaster::Test::Connectivity;
+package Zonemaster::Engine::Test::Connectivity;
 
 use version; our $VERSION = version->declare("v1.0.7");
 
@@ -7,11 +7,11 @@ use warnings;
 
 use 5.014002;
 
-use Zonemaster;
-use Zonemaster::Util;
-use Zonemaster::TestMethods;
-use Zonemaster::Constants qw[:ip];
-use Zonemaster::ASNLookup;
+use Zonemaster::Engine;
+use Zonemaster::Engine::Util;
+use Zonemaster::Engine::TestMethods;
+use Zonemaster::Engine::Constants qw[:ip];
+use Zonemaster::Engine::ASNLookup;
 use Carp;
 
 use List::MoreUtils qw[uniq];
@@ -24,13 +24,13 @@ sub all {
     my ( $class, $zone ) = @_;
     my @results;
 
-    if ( Zonemaster->config->should_run( 'connectivity01' ) ) {
+    if ( Zonemaster::Engine->config->should_run( 'connectivity01' ) ) {
         push @results, $class->connectivity01( $zone );
     }
-    if ( Zonemaster->config->should_run( 'connectivity02' ) ) {
+    if ( Zonemaster::Engine->config->should_run( 'connectivity02' ) ) {
         push @results, $class->connectivity02( $zone );
     }
-    if ( Zonemaster->config->should_run( 'connectivity03' ) ) {
+    if ( Zonemaster::Engine->config->should_run( 'connectivity03' ) ) {
         push @results, $class->connectivity03( $zone );
     }
 
@@ -110,7 +110,7 @@ sub translation {
 } ## end sub translation
 
 sub version {
-    return "$Zonemaster::Test::Connectivity::VERSION";
+    return "$Zonemaster::Engine::Test::Connectivity::VERSION";
 }
 
 ###
@@ -125,10 +125,10 @@ sub connectivity01 {
     my %ips;
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
-        if ( not Zonemaster->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
+        if ( not Zonemaster::Engine->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
             push @results,
               info(
                 IPV6_DISABLED => {
@@ -140,7 +140,7 @@ sub connectivity01 {
             next;
         }
 
-        if ( not Zonemaster->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
+        if ( not Zonemaster::Engine->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
             push @results,
               info(
                 IPV4_DISABLED => {
@@ -177,7 +177,7 @@ sub connectivity01 {
 
         $ips{ $local_ns->address->short }++;
 
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     return @results;
 } ## end sub connectivity01
@@ -189,10 +189,10 @@ sub connectivity02 {
     my $query_type = q{SOA};
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
-        if ( not Zonemaster->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
+        if ( not Zonemaster::Engine->config->ipv6_ok and $local_ns->address->version == $IP_VERSION_6 ) {
             push @results,
               info(
                 IPV6_DISABLED => {
@@ -204,7 +204,7 @@ sub connectivity02 {
             next;
         }
 
-        if ( not Zonemaster->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
+        if ( not Zonemaster::Engine->config->ipv4_ok and $local_ns->address->version == $IP_VERSION_4 ) {
             push @results,
               info(
                 IPV4_DISABLED => {
@@ -241,7 +241,7 @@ sub connectivity02 {
 
         $ips{ $local_ns->address->short }++;
 
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     return @results;
 } ## end sub connectivity02
@@ -252,7 +252,7 @@ sub connectivity03 {
 
     my %ips = ( $IP_VERSION_4 => {}, $IP_VERSION_6 => {} );
 
-    foreach my $ns ( @{ Zonemaster::TestMethods->method4( $zone ) } ) {
+    foreach my $ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) } ) {
         my $addr = $ns->address;
         $ips{ $addr->version }{ $addr->ip } = $addr;
     }
@@ -264,7 +264,7 @@ sub connectivity03 {
     my @v6asns;
 
     foreach my $v4ip ( @v4ips ) {
-        my ( $asnref, $prefix, $raw ) = Zonemaster::ASNLookup->get_with_prefix( $v4ip );
+        my ( $asnref, $prefix, $raw ) = Zonemaster::Engine::ASNLookup->get_with_prefix( $v4ip );
         if ( $raw ) {
             push @results,
               info(
@@ -296,7 +296,7 @@ sub connectivity03 {
         }
     } ## end foreach my $v4ip ( @v4ips )
     foreach my $v6ip ( @v6ips ) {
-        my ( $asnref, $prefix, $raw ) = Zonemaster::ASNLookup->get_with_prefix( $v6ip );
+        my ( $asnref, $prefix, $raw ) = Zonemaster::Engine::ASNLookup->get_with_prefix( $v6ip );
         if ( $raw ) {
             push @results,
               info(
@@ -372,11 +372,11 @@ sub connectivity03 {
 
 =head1 NAME
 
-Zonemaster::Test::Connectivity - module implementing tests of nameservers reachability
+Zonemaster::Engine::Test::Connectivity - module implementing tests of nameservers reachability
 
 =head1 SYNOPSIS
 
-    my @results = Zonemaster::Test::Connectivity->all($zone);
+    my @results = Zonemaster::Engine::Test::Connectivity->all($zone);
 
 =head1 METHODS
 

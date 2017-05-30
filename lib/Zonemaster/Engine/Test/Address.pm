@@ -1,4 +1,4 @@
-package Zonemaster::Test::Address;
+package Zonemaster::Engine::Test::Address;
 
 use version; our $VERSION = version->declare("v1.0.2");
 
@@ -7,10 +7,10 @@ use warnings;
 
 use 5.014002;
 
-use Zonemaster;
-use Zonemaster::Util;
-use Zonemaster::TestMethods;
-use Zonemaster::Constants qw[:addresses :ip];
+use Zonemaster::Engine;
+use Zonemaster::Engine::Util;
+use Zonemaster::Engine::TestMethods;
+use Zonemaster::Engine::Constants qw[:addresses :ip];
 use List::MoreUtils qw[none any];
 
 use Carp;
@@ -23,11 +23,11 @@ sub all {
     my ( $class, $zone ) = @_;
     my @results;
 
-    push @results, $class->address01( $zone ) if Zonemaster->config->should_run( 'address01' );
-    push @results, $class->address02( $zone ) if Zonemaster->config->should_run( 'address02' );
+    push @results, $class->address01( $zone ) if Zonemaster::Engine->config->should_run( 'address01' );
+    push @results, $class->address02( $zone ) if Zonemaster::Engine->config->should_run( 'address02' );
     # Perform ADDRESS03 if ADDRESS02 passed
     if ( any { $_->tag eq q{NAMESERVERS_IP_WITH_REVERSE} } @results ) {
-        push @results, $class->address03( $zone ) if Zonemaster->config->should_run( 'address03' );
+        push @results, $class->address03( $zone ) if Zonemaster::Engine->config->should_run( 'address03' );
     }
 
     return @results;
@@ -80,7 +80,7 @@ sub translation {
 }
 
 sub version {
-    return "$Zonemaster::Test::Address::VERSION";
+    return "$Zonemaster::Engine::Test::Address::VERSION";
 }
 
 sub find_special_address {
@@ -109,7 +109,7 @@ sub address01 {
     my %ips;
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
         next if $ips{ $local_ns->address->short };
@@ -131,7 +131,7 @@ sub address01 {
 
         $ips{ $local_ns->address->short }++;
 
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     if ( scalar keys %ips and not scalar @results ) {
         push @results, info( NO_IP_PRIVATE_NETWORK => {} );
@@ -148,7 +148,7 @@ sub address02 {
     my $ptr_query;
 
     foreach
-      my $local_ns ( @{ Zonemaster::TestMethods->method4( $zone ) }, @{ Zonemaster::TestMethods->method5( $zone ) } )
+      my $local_ns ( @{ Zonemaster::Engine::TestMethods->method4( $zone ) }, @{ Zonemaster::Engine::TestMethods->method5( $zone ) } )
     {
 
         next if $ips{ $local_ns->address->short };
@@ -156,14 +156,14 @@ sub address02 {
         my $reverse_ip_query = $local_ns->address->reverse_ip;
         $ptr_query = $reverse_ip_query;
 
-        my $p = Zonemaster::Recursor->recurse( $ptr_query, q{PTR} );
+        my $p = Zonemaster::Engine::Recursor->recurse( $ptr_query, q{PTR} );
 
         # In case of Classless IN-ADDR.ARPA delegation, query returns
         # CNAME records. A PTR query is done on the CNAME.
         if ( $p and $p->rcode eq q{NOERROR} and $p->get_records( q{CNAME}, q{answer} ) ) {
             my ( $cname ) = $p->get_records( q{CNAME}, q{answer} );
             $ptr_query = $cname->cname;
-            $p = Zonemaster::Recursor->recurse( $ptr_query, q{PTR} );
+            $p = Zonemaster::Engine::Recursor->recurse( $ptr_query, q{PTR} );
         }
 
         if ( $p ) {
@@ -188,7 +188,7 @@ sub address02 {
 
         $ips{ $local_ns->address->short }++;
 
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     if ( scalar keys %ips and not scalar @results ) {
         push @results, info( NAMESERVERS_IP_WITH_REVERSE => {} );
@@ -204,21 +204,21 @@ sub address03 {
 
     my %ips;
 
-    foreach my $local_ns ( @{ Zonemaster::TestMethods->method5( $zone ) } ) {
+    foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods->method5( $zone ) } ) {
 
         next if $ips{ $local_ns->address->short };
 
         my $reverse_ip_query = $local_ns->address->reverse_ip;
         $ptr_query = $reverse_ip_query;
 
-        my $p = Zonemaster::Recursor->recurse( $ptr_query, q{PTR} );
+        my $p = Zonemaster::Engine::Recursor->recurse( $ptr_query, q{PTR} );
 
         # In case of Classless IN-ADDR.ARPA delegation, query returns
         # CNAME records. A PTR query is done on the CNAME.
         if ( $p and $p->rcode eq q{NOERROR} and $p->get_records( q{CNAME}, q{answer} ) ) {
             my ( $cname ) = $p->get_records( q{CNAME}, q{answer} );
             $ptr_query = $cname->cname;
-            $p = Zonemaster::Recursor->recurse( $ptr_query, q{PTR} );
+            $p = Zonemaster::Engine::Recursor->recurse( $ptr_query, q{PTR} );
         }
 
         if ( $p ) {
@@ -256,7 +256,7 @@ sub address03 {
 
         $ips{ $local_ns->address->short }++;
 
-    } ## end foreach my $local_ns ( @{ Zonemaster::TestMethods...})
+    } ## end foreach my $local_ns ( @{ Zonemaster::Engine::TestMethods...})
 
     if ( scalar keys %ips and not scalar @results ) {
         push @results, info( NAMESERVER_IP_PTR_MATCH => {} );
@@ -269,11 +269,11 @@ sub address03 {
 
 =head1 NAME
 
-Zonemaster::Test::Address - module implementing tests focused on the Address specific test cases of the DNS tests
+Zonemaster::Engine::Test::Address - module implementing tests focused on the Address specific test cases of the DNS tests
 
 =head1 SYNOPSIS
 
-    my @results = Zonemaster::Test::Address->all($zone);
+    my @results = Zonemaster::Engine::Test::Address->all($zone);
 
 =head1 METHODS
 

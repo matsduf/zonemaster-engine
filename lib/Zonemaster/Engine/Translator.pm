@@ -1,4 +1,4 @@
-package Zonemaster::Translator;
+package Zonemaster::Engine::Translator;
 
 use version; our $VERSION = version->declare("v1.0.6");
 
@@ -8,7 +8,7 @@ use warnings;
 
 use Moose;
 use Carp;
-use Zonemaster;
+use Zonemaster::Engine;
 
 use POSIX qw[setlocale LC_MESSAGES];
 use Locale::TextDomain qw[Zonemaster];
@@ -39,8 +39,8 @@ sub _load_data {
     my %data;
 
     $data{SYSTEM} = _system_translation();
-    foreach my $mod ( 'Basic', Zonemaster->modules ) {
-        my $module = 'Zonemaster::Test::' . $mod;
+    foreach my $mod ( 'Basic', Zonemaster::Engine->modules ) {
+        my $module = 'Zonemaster::Engine::Test::' . $mod;
         $data{ uc( $mod ) } = $module->translation();
     }
 
@@ -113,11 +113,11 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-Zonemaster::Translator - translation support for Zonemaster
+Zonemaster::Engine::Translator - translation support for Zonemaster
 
 =head1 SYNOPSIS
 
-    my $trans = Zonemaster::Translator->new({ locale => 'sv_SE.UTF-8' });
+    my $trans = Zonemaster::Engine::Translator->new({ locale => 'sv_SE.UTF-8' });
     say $trans->to_string($entry);
 
 =head1 ATTRIBUTES
@@ -144,12 +144,12 @@ end-users.
 
 =item to_string($entry)
 
-Takes a L<Zonemaster::Logger::Entry> object as its argument and returns a translated string with the timestamp, level, message and arguments in the
+Takes a L<Zonemaster::Engine::Logger::Entry> object as its argument and returns a translated string with the timestamp, level, message and arguments in the
 entry.
 
 =item translate_tag
 
-Takes a L<Zonemaster::Logger::Entry> object as its argument and returns a translation of its tag and arguments.
+Takes a L<Zonemaster::Engine::Logger::Entry> object as its argument and returns a translation of its tag and arguments.
 
 =item BUILD
 

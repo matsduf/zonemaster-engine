@@ -1,4 +1,4 @@
-package Zonemaster::Util;
+package Zonemaster::Engine::Util;
 
 use version; our $VERSION = version->declare("v1.1.2");
 
@@ -9,8 +9,8 @@ use parent 'Exporter';
 use strict;
 use warnings;
 
-use Zonemaster;
-use Zonemaster::DNSName;
+use Zonemaster::Engine;
+use Zonemaster::Engine::DNSName;
 use Pod::Simple::SimpleTree;
 
 ## no critic (Modules::ProhibitAutomaticExportation)
@@ -20,23 +20,23 @@ our %EXPORT_TAGS = ( all => \@EXPORT_OK );
 
 ## no critic (Subroutines::RequireArgUnpacking)
 sub ns {
-    return Zonemaster->ns( @_ );
+    return Zonemaster::Engine->ns( @_ );
 }
 
 sub info {
     my ( $tag, $argref ) = @_;
 
-    return Zonemaster->logger->add( $tag, $argref );
+    return Zonemaster::Engine->logger->add( $tag, $argref );
 }
 
 sub policy {
-    return Zonemaster->config->policy;
+    return Zonemaster::Engine->config->policy;
 }
 
 sub name {
     my ( $name ) = @_;
 
-    return Zonemaster::DNSName->new( $name );
+    return Zonemaster::Engine::DNSName->new( $name );
 }
 
 # Functions for extracting POD documentation from test modules
@@ -97,7 +97,7 @@ sub pod_extract_for {
     my $parser = Pod::Simple::SimpleTree->new;
     $parser->no_whining( 1 );
 
-    my %desc = eval { _pod_process_tree( $parser->parse_file( $INC{"Zonemaster/Test/$name.pm"} )->root ) };
+    my %desc = eval { _pod_process_tree( $parser->parse_file( $INC{"Zonemaster/Engine/Test/$name.pm"} )->root ) };
 
     return \%desc;
 }
@@ -137,11 +137,11 @@ sub supports_ipv6 {
 
 =head1 NAME
 
-Zonemaster::Util - utility functions for other Zonemaster modules
+Zonemaster::Engine::Util - utility functions for other Zonemaster::Engine modules
 
 =head1 SYNOPSIS
 
-    use Zonemaster::Util;
+    use Zonemaster::Engine::Util;
     info(TAG => { some => 'argument'});
     my $ns = ns($name, $address);
     my $name = name('whatever.example.org');
@@ -152,7 +152,7 @@ Zonemaster::Util - utility functions for other Zonemaster modules
 
 =item info($tag, $href)
 
-Creates and returns a L<Zonemaster::Logger::Entry> object. The object
+Creates and returns a L<Zonemaster::Engine::Logger::Entry> object. The object
 is also added to the global logger object's list of entries.
 
 =item ns($name, $address)
@@ -165,7 +165,7 @@ Returns a reference to the global policy hash.
 
 =item name($string_name_or_zone)
 
-Creates and returns a L<Zonemaster::DNSName> object for the given argument.
+Creates and returns a L<Zonemaster::Engine::DNSName> object for the given argument.
 
 =item pod_extract_for($testname)
 

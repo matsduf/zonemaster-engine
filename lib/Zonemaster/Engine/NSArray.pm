@@ -1,4 +1,4 @@
-package Zonemaster::NSArray;
+package Zonemaster::Engine::NSArray;
 
 use version; our $VERSION = version->declare("v1.0.2");
 
@@ -6,8 +6,8 @@ use 5.014002;
 use warnings;
 
 use Carp;
-use Zonemaster::Recursor;
-use Zonemaster::Nameserver;
+use Zonemaster::Engine::Recursor;
+use Zonemaster::Engine::Nameserver;
 
 use Moose;
 
@@ -118,9 +118,9 @@ sub UNTIE {
 
 sub _load_name {
     my ( $self, $name ) = @_;
-    my @addrs = Zonemaster::Recursor->get_addresses_for( $name );
+    my @addrs = Zonemaster::Engine::Recursor->get_addresses_for( $name );
     foreach my $addr ( sort { $a->ip cmp $b->ip } @addrs ) {
-        my $ns = Zonemaster::Nameserver->new( { name => $name, address => $addr } );
+        my $ns = Zonemaster::Engine::Nameserver->new( { name => $name, address => $addr } );
         if ( not grep { "$ns" eq "$_" } @{ $self->ary } ) {
             push @{ $self->ary }, $ns;
         }
@@ -136,17 +136,17 @@ __PACKAGE__->meta->make_immutable;
 
 =head1 NAME
 
-Zonemaster::NSArray - Class implementing arrays that lazily looks up name server addresses from their names
+Zonemaster::Engine::NSArray - Class implementing arrays that lazily looks up name server addresses from their names
 
 =head1 SYNOPSIS
 
-    tie @ary, 'Zonemaster::NSArray', @ns_names
+    tie @ary, 'Zonemaster::Engine::NSArray', @ns_names
 
 =head1 DESCRIPTION
 
 This class is used for the C<glue> and C<ns> attributes of the
-L<Zonemaster::Zone> class. It is initially seeded with a list of
-names, which will be expanded into proper L<Zonemaster::Nameserver>
+L<Zonemaster::Engine::Zone> class. It is initially seeded with a list of
+names, which will be expanded into proper L<Zonemaster::Engine::Nameserver>
 objects on demand. Be careful with using Perl functions that act on
 whole arrays (particularly C<foreach>), since they will usually force
 the entire array to expand, negating the use of the lazy-loading.
