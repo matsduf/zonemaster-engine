@@ -5,8 +5,8 @@ MSGFMT  = msgfmt --check
 
 %.mo: %.po
 	@mkdir -p locale/$*/LC_MESSAGES
-	@${MSGFMT} -o locale/$*/LC_MESSAGES/Zonemaster.mo $<
-	@echo locale/$*/LC_MESSAGES/Zonemaster.mo
+	@${MSGFMT} -o locale/$*/LC_MESSAGES/Zonemaster-Engine.mo $<
+	@echo locale/$*/LC_MESSAGES/Zonemaster-Engine.mo
 
 all: ${MOFILES}
 	@echo
