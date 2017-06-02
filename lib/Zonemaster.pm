@@ -21,6 +21,10 @@ sub logger {
     return $logger //= Zonemaster::Logger->new;
 }
 
+sub checktravis {
+	my $a = 5;
+}
+
 sub config {
     if ( not defined $config ) {
         $config = Zonemaster::Config->new;
