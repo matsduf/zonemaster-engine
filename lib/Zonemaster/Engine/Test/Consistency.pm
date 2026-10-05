@@ -208,7 +208,7 @@ Readonly my %TAG_DESCRIPTIONS => (
           'There is one or more extra address records found in the child zone that are not present as glue in the delegation: "{ns_list}".', @_;
     },
     CS05_NO_MISMATCH_GLUE_ZONE => sub {
-        __x    # CONSISTENCY:CS05_NO_MISMATCH_GLUE_ZONE
+        __     # CONSISTENCY:CS05_NO_MISMATCH_GLUE_ZONE
           'There is no mismatch between delegation from parent and authoritative data in the child zone.';
     },
     CS05_ID_ADDR_MISMATCH => sub {
@@ -220,7 +220,7 @@ Readonly my %TAG_DESCRIPTIONS => (
           'Address record for {nsname}, used as glue record in delegation, is missing in the child zone.', @_;
     },
     CS05_INCONSISTENT_DELEGATION => sub {
-        __x    # CONSISTENCY:CS05_INCONSISTENT_DELEGATION
+        __     # CONSISTENCY:CS05_INCONSISTENT_DELEGATION
           'The delegation is inconsistent between the parent name servers.';
     },
     CS05_MISSING_GLUE_FOR_NS => sub {
@@ -236,7 +236,7 @@ Readonly my %TAG_DESCRIPTIONS => (
           'IP address (glue record) is expected but missing for {nsname} in the undelegated data or hint data for root.', @_;
     },
     CS05_NO_NS_ADDR_CHILD => sub {
-        __x    # CONSISTENCY:CS05_NO_NS_ADDR_CHILD
+        __     # CONSISTENCY:CS05_NO_NS_ADDR_CHILD
           'Child zone cannot be tested since there are no name server IP addresses for that zone.';
     },
     CS05_OOD_ADDR_MISMATCH => sub {
