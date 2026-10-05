@@ -1057,8 +1057,8 @@ sub consistency05 {
             if ( not $set->equals( $lookup ) ) {
                 push @results, _emit_log( CS05_OOD_ADDR_MISMATCH => {
                     nsname => $n,
-                    ns_ip_list_glue => join( ";", map { $_->address() } $set->sorted_items() ),
-                    ns_ip_list_lookup => join( ";", map { $_->address() } $lookup->sorted_items() )
+                    ns_ip_list_glue => join( ";", map { $_->address()->short() } $set->sorted_items() ),
+                    ns_ip_list_lookup => join( ";", map { $_->address()->short() } $lookup->sorted_items() )
                 } );
             }
         }
