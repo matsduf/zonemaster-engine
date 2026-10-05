@@ -153,8 +153,8 @@ scenario 'NO-NS-ADDR-CHILD-2' => sub {
 };
 
 scenario 'OOD-ADDR-MISMATCH' => sub {
-     zone 'child.{SCENARIO}.{TESTCASE}.xa';
-     expect 'CS05_OOD_ADDR_MISMATCH' => {
+    zone 'child.{SCENARIO}.{TESTCASE}.xa';
+    expect 'CS05_OOD_ADDR_MISMATCH' => {
         nsname => 'ns1.sibbling.ood-addr-mismatch.consistency05.xa',
         ns_ip_list_glue => '127.14.5.39;'
                          . 'fda1:b2:c3:0:127:14:5:39',
